@@ -51,6 +51,8 @@ public class ClockBehaviorTest {
         shadowOf(activity.getSystemService(PowerManager.class)).setIsInteractive(true);
         setLocale(Locale.US);
         Settings.System.putString(activity.getContentResolver(), Settings.System.TIME_12_24, "24");
+        shadowOf(Looper.getMainLooper()).idle();
+        controller.windowFocusChanged(true);
     }
 
     @After public void tearDown() {
@@ -99,7 +101,7 @@ public class ClockBehaviorTest {
         assertTrue(clock.isAttachedToWindow());
         SecondsHook.refresh(clock);
         String first = clock.getText().toString();
-        assertTrue(first.matches("\\d{2}:\\d{2}:\\d{2}"));
+        assertTrue(diagnostics(clock), first.matches("\\d{2}:\\d{2}:\\d{2}"));
         // Samsung's own minute notification must be corrected immediately.
         clock.setText("Samsung minute text");
         SecondsHook.refresh(clock);
@@ -125,7 +127,7 @@ public class ClockBehaviorTest {
         assertEquals("hidden sentinel", clock.getText().toString());
         clock.setVisibility(android.view.View.VISIBLE);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
-        assertNotEquals("hidden sentinel", clock.getText().toString());
+        assertNotEquals(diagnostics(clock), "hidden sentinel", clock.getText().toString());
     }
 
     @Test public void sleepingPhoneIsNotRepaintedAndResumesOnWake() {
@@ -139,6 +141,14 @@ public class ClockBehaviorTest {
         assertEquals("sleep sentinel", clock.getText().toString());
         shadowOf(power).setIsInteractive(true);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
-        assertNotEquals("sleep sentinel", clock.getText().toString());
+        assertNotEquals(diagnostics(clock), "sleep sentinel", clock.getText().toString());
+    }
+
+    private String diagnostics(TextView clock) {
+        Display display = clock.getDisplay();
+        return "text=" + clock.getText() + ", attached=" + clock.isAttachedToWindow()
+                + ", shown=" + clock.isShown() + ", windowVisibility=" + clock.getWindowVisibility()
+                + ", displayState=" + (display == null ? "null" : display.getState())
+                + ", interactive=" + activity.getSystemService(PowerManager.class).isInteractive();
     }
 }

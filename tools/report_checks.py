@@ -18,6 +18,10 @@ for report in reports:
     failures += int(suite.get('failures', 0))
     errors += int(suite.get('errors', 0))
     skipped += int(suite.get('skipped', 0))
+    if int(suite.get('failures', 0)) or int(suite.get('errors', 0)):
+        stderr = suite.findtext('system-err', '')
+        if stderr:
+            annotate('warning', 'Test runtime stderr:\n' + stderr[-5000:])
     for case in suite.findall('testcase'):
         for failure in list(case.findall('failure')) + list(case.findall('error')):
             detail = failure.text or failure.get('message', '')
