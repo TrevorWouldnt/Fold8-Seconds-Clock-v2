@@ -5,6 +5,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.hardware.display.DisplayManager;
 import android.os.Looper;
 import android.os.LocaleList;
 import android.os.PowerManager;
@@ -44,7 +45,9 @@ public class ClockBehaviorTest {
         activity = controller.get();
         parent = new FrameLayout(activity);
         activity.setContentView(parent);
-        shadowOf(activity.getDisplay()).setState(Display.STATE_ON);
+        Display display = activity.getSystemService(DisplayManager.class)
+                .getDisplay(Display.DEFAULT_DISPLAY);
+        shadowOf(display).setState(Display.STATE_ON);
         shadowOf(activity.getSystemService(PowerManager.class)).setIsInteractive(true);
         setLocale(Locale.US);
         Settings.System.putString(activity.getContentResolver(), Settings.System.TIME_12_24, "24");
