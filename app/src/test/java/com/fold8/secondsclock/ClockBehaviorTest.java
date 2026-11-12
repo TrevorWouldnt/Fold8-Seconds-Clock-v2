@@ -23,6 +23,8 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.util.ReflectionHelpers;
+import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -52,7 +54,15 @@ public class ClockBehaviorTest {
         setLocale(Locale.US);
         Settings.System.putString(activity.getContentResolver(), Settings.System.TIME_12_24, "24");
         shadowOf(Looper.getMainLooper()).idle();
+        // Robolectric's API 35 window-manager stub does not send the app-visible
+        // callback that the real WindowManager sends when showing a window.
+        Object root = ReflectionHelpers.callInstanceMethod(
+                activity.getWindow().getDecorView(), "getViewRootImpl");
+        ReflectionHelpers.callInstanceMethod(root, "dispatchAppVisibility",
+                ClassParameter.from(boolean.class, true));
+        shadowOf(Looper.getMainLooper()).idle();
         controller.windowFocusChanged(true);
+        assertEquals(android.view.View.VISIBLE, parent.getWindowVisibility());
     }
 
     @After public void tearDown() {
