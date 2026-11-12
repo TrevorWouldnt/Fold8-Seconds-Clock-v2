@@ -1,5 +1,12 @@
 plugins { id 'com.android.application' }
 
+configurations { robolectricSdk }
+
+def prepareRobolectricSdk = tasks.register('prepareRobolectricSdk', Copy) {
+    from configurations.robolectricSdk
+    into layout.buildDirectory.dir('robolectric-sdk')
+}
+
 android {
     namespace 'com.fold8.secondsclock'
     compileSdk 35
@@ -17,7 +24,11 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
         unitTests.all {
-            systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+            dependsOn prepareRobolectricSdk
+            // Resolve once through Gradle (with its cache/retries), rather than
+            // starting parallel Maven downloads inside each test sandbox.
+            systemProperty 'robolectric.offline', 'true'
+            systemProperty 'robolectric.dependency.dir', layout.buildDirectory.dir('robolectric-sdk').get().asFile.absolutePath
         }
     }
 }
@@ -29,4 +40,5 @@ dependencies {
     testImplementation project(':xposed-api-stubs')
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.14.1'
+    robolectricSdk 'org.robolectric:android-all-instrumented:15-robolectric-12650502-i7'
 }

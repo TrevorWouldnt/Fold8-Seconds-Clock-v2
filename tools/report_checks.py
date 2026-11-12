@@ -20,7 +20,10 @@ for report in reports:
     skipped += int(suite.get('skipped', 0))
     for case in suite.findall('testcase'):
         for failure in list(case.findall('failure')) + list(case.findall('error')):
-            annotate('error', f"{case.get('name')}: {(failure.text or failure.get('message', ''))[:4000]}")
+            detail = failure.text or failure.get('message', '')
+            if len(detail) > 5000:
+                detail = detail[:1500] + '\n...\n' + detail[-3500:]
+            annotate('error', f"{case.get('name')}: {detail}")
 annotate('notice', f'Android unit tests: {total} total, {failures} failures, {errors} errors, {skipped} skipped; device tests were not run.')
 if os.environ.get('VALIDATION_OUTCOME') != 'success':
     log = Path('build-validation.log')
