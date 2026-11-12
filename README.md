@@ -8,6 +8,10 @@ does not patch, re-sign, or replace Samsung's SystemUI APK.
 **An APK build is not proof of device compatibility. No phone testing has been
 performed.** See [BUILD_STATUS.md](BUILD_STATUS.md) for the validation record.
 
+[GitHub Actions build #8 passed](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43183294712):
+six Android unit tests, lint, APK assembly, signature and packaging checks.
+Download **Fold8-Seconds-Clock-UNTESTED** from that run's Artifacts section.
+
 ## Hook and behavior
 
 The supplied `reference/*.txt` identify
