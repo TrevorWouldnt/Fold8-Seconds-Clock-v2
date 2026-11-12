@@ -11,9 +11,6 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    env:
-      ANDROID_HOME: ${{ runner.temp }}/fold8-android-sdk
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/fold8-android-sdk
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -21,10 +18,21 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Install pinned Android SDK tools
-        run: .github/scripts/install-android-sdk.sh
+        run: |
+          export ANDROID_HOME="$RUNNER_TEMP/fold8-android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          .github/scripts/install-android-sdk.sh
       - uses: gradle/actions/setup-gradle@v4
       - name: Test, lint, and build debug APK
-        run: ./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+        id: validation
+        run: ./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug 2>&1 | tee build-validation.log
+      - name: Report validation results
+        if: always() && steps.validation.outcome != 'skipped'
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validation.outcome }}
+        run: python3 tools/report_checks.py
       - name: Verify module packaging and APK signature
         run: |
           python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
@@ -44,5 +52,6 @@ jobs:
         with:
           name: checks
           path: |
+            build-validation.log
             app/build/reports/tests/testDebugUnitTest/
             app/build/reports/lint-results-debug.html
