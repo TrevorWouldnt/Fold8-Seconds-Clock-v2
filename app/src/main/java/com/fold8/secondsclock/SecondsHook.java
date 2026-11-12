@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.LongSupplier;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -83,12 +84,16 @@ public final class SecondsHook implements IXposedHookLoadPackage {
 
     // Package-private so lifecycle behavior can be exercised with Android tests.
     static void refresh(TextView clock) {
+        refresh(clock, System::currentTimeMillis);
+    }
+
+    static void refresh(TextView clock, LongSupplier wallTime) {
         if (FAILED.get()) return;
         try {
             if (!clock.isAttachedToWindow()) return;
             Ticker ticker = TASKS.get(clock);
             if (ticker == null) {
-                ticker = new Ticker(clock);
+                ticker = new Ticker(clock, wallTime);
                 TASKS.put(clock, ticker);
                 clock.addOnAttachStateChangeListener(ticker);
                 XposedBridge.log(TAG + "attached status-bar clock ticker");
@@ -120,8 +125,12 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     private static final class Ticker implements Runnable, View.OnAttachStateChangeListener {
         private final WeakReference<TextView> reference;
         private final ClockText formatter = new ClockText();
+        private final LongSupplier wallTime;
 
-        Ticker(TextView clock) { reference = new WeakReference<>(clock); }
+        Ticker(TextView clock, LongSupplier wallTime) {
+            reference = new WeakReference<>(clock);
+            this.wallTime = wallTime;
+        }
 
         @Override
         public void run() {
@@ -139,13 +148,13 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                 if (clock.isShown() && clock.getWindowVisibility() == View.VISIBLE
                         && display != null && display.getState() == Display.STATE_ON
                         && power != null && power.isInteractive()) {
-                    long now = System.currentTimeMillis();
+                    long now = wallTime.getAsLong();
                     String text = formatter.format(clock.getContext(), now);
                     if (!text.contentEquals(clock.getText())) clock.setText(text);
                     clock.setContentDescription(text);
                 }
                 // Wall time can change independently of uptime. Recompute every time.
-                clock.postDelayed(this, ClockText.delayUntilNextSecond(System.currentTimeMillis()));
+                clock.postDelayed(this, ClockText.delayUntilNextSecond(wallTime.getAsLong()));
             } catch (Throwable error) {
                 stop(clock);
                 fail(error);

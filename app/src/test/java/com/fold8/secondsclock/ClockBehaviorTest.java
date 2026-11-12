@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35)
@@ -109,15 +110,19 @@ public class ClockBehaviorTest {
         TextView clock = new TextView(activity);
         parent.addView(clock);
         assertTrue(clock.isAttachedToWindow());
-        SecondsHook.refresh(clock);
+        AtomicLong wallTime = new AtomicLong(Instant.parse("2026-11-12T13:04:05Z").toEpochMilli());
+        SecondsHook.refresh(clock, wallTime::get);
         String first = clock.getText().toString();
         assertTrue(diagnostics(clock), first.matches("\\d{2}:\\d{2}:\\d{2}"));
         // Samsung's own minute notification must be corrected immediately.
         clock.setText("Samsung minute text");
         SecondsHook.refresh(clock);
         assertNotEquals("Samsung minute text", clock.getText().toString());
+        // Advancing Robolectric's looper does not advance java.lang.System's
+        // real wall clock. Advance both inputs explicitly, without sleeping.
+        wallTime.addAndGet(2000);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));
-        assertNotEquals(first, clock.getText().toString());
+        assertEquals("13:04:07", clock.getText().toString());
         parent.removeView(clock);
         clock.setText("detached sentinel");
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3));
