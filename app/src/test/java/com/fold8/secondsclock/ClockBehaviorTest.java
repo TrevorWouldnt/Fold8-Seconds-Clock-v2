@@ -7,7 +7,9 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Looper;
 import android.os.LocaleList;
+import android.os.PowerManager;
 import android.provider.Settings;
+import android.view.Display;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -42,6 +44,8 @@ public class ClockBehaviorTest {
         activity = controller.get();
         parent = new FrameLayout(activity);
         activity.setContentView(parent);
+        shadowOf(activity.getDisplay()).setState(Display.STATE_ON);
+        shadowOf(activity.getSystemService(PowerManager.class)).setIsInteractive(true);
         setLocale(Locale.US);
         Settings.System.putString(activity.getContentResolver(), Settings.System.TIME_12_24, "24");
     }
@@ -119,5 +123,19 @@ public class ClockBehaviorTest {
         clock.setVisibility(android.view.View.VISIBLE);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
         assertNotEquals("hidden sentinel", clock.getText().toString());
+    }
+
+    @Test public void sleepingPhoneIsNotRepaintedAndResumesOnWake() {
+        TextView clock = new TextView(activity);
+        parent.addView(clock);
+        PowerManager power = activity.getSystemService(PowerManager.class);
+        shadowOf(power).setIsInteractive(false);
+        clock.setText("sleep sentinel");
+        SecondsHook.refresh(clock);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));
+        assertEquals("sleep sentinel", clock.getText().toString());
+        shadowOf(power).setIsInteractive(true);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
+        assertNotEquals("sleep sentinel", clock.getText().toString());
     }
 }
