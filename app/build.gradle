@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.fold8.secondsclock'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.fold8.secondsclock'
+        minSdk 29
+        targetSdk 35
+        versionCode 1
+        versionName '0.1-research-prototype'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+        }
+    }
+}
+
+dependencies {
+    // Signatures only; Vector supplies the Xposed API at runtime.
+    // This library is not bundled inside the resulting APK.
+    compileOnly project(':xposed-api-stubs')
+    testImplementation project(':xposed-api-stubs')
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+}

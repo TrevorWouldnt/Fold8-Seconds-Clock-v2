@@ -1,0 +1,20 @@
+
+ Lcom/android/systemui/statusbar/phone/PhoneStatusBarClockManager; parent= Ljava/lang/Object; flags= 0x1
+ FIELD DEBUG Z 0x19
+ FIELD mClockBlocked Z 0x1
+ FIELD mClockPosition Lcom/android/systemui/statusbar/phone/PhoneStatusBarClockManager$POSITION; 0x1
+ FIELD mClockView Lcom/android/systemui/statusbar/policy/QSClockIndicatorView; 0x11
+ FIELD mGrandParentView Landroid/view/ViewGroup; 0x11
+ FIELD mIndicatorGarden Lcom/android/systemui/statusbar/phone/PhoneStatusBarViewController; 0x1
+ FIELD mIndicatorGardenPresenter Lcom/android/systemui/statusbar/phone/IndicatorGardenPresenter; 0x11
+ FIELD mIsChangedClockPosition Z 0x1
+ FIELD mLeftContainer Landroid/view/ViewGroup; 0x1
+ FIELD mMiddleContainer Landroid/view/ViewGroup; 0x1
+ FIELD mRightContainer Landroid/view/ViewGroup; 0x1
+ FIELD mSlimIndicatorViewMediator Lcom/android/systemui/slimindicator/SlimIndicatorViewMediator; 0x11
+ METHOD <clinit>(): V access=0x10008 codeOff=6615156
+ METHOD <init>(Landroid/view/ViewGroup;,Lcom/android/systemui/slimindicator/SlimIndicatorViewMediator;,Lcom/android/systemui/statusbar/phone/IndicatorGardenPresenter;,Lcom/android/systemui/statusbar/policy/QSClockIndicatorView;): V access=0x10001 codeOff=6615188
+ METHOD addClockView(Landroid/view/ViewGroup;): V access=0x11 codeOff=6615248
+ METHOD getClockWidth(): I access=0x11 codeOff=6615040
+ METHOD updateQuickStarStyle(): V access=0x11 codeOff=6615304
+ METHOD updateResources(): V access=0x11 codeOff=6615496

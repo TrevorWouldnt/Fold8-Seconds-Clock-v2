@@ -1,0 +1,29 @@
+
+ Lcom/android/systemui/statusbar/policy/QSClockIndicatorView; parent= Lcom/android/systemui/statusbar/policy/QSClock; flags= 0x11
+ FIELD $r8$clinit I 0x1019
+ FIELD DEBUG_TAG Ljava/lang/String; 0x11
+ FIELD ICON_DARK_COLOR_TINT I 0x11
+ FIELD ICON_LIGHT_COLOR_TINT I 0x11
+ FIELD callers Ljava/lang/String; 0x1
+ FIELD clockVisibleByUser Z 0x1
+ FIELD flipFont I 0x1
+ FIELD lastQSClockBellSound Lcom/android/systemui/statusbar/policy/QSClockBellSound; 0x1
+ FIELD recentColor I 0x1
+ FIELD settingsHelper Lcom/android/systemui/util/SettingsHelper; 0x2
+ FIELD slimIndicatorViewMediator Lcom/android/systemui/slimindicator/SlimIndicatorViewMediator; 0x1
+ METHOD <init>(Landroid/content/Context;): V access=0x10001 codeOff=7402872
+ METHOD <init>(Landroid/content/Context;,Landroid/util/AttributeSet;): V access=0x10001 codeOff=7402908
+ METHOD <init>(Landroid/content/Context;,Landroid/util/AttributeSet;,I): V access=0x10001 codeOff=7402944
+ METHOD <init>(Landroid/content/Context;,Landroid/util/AttributeSet;,I,I,Lkotlin/jvm/internal/DefaultConstructorMarker;): V access=0x11001 codeOff=7403012
+ METHOD calculateVisibility(): Z access=0x11 codeOff=7402644
+ METHOD getDateText(Lcom/android/systemui/statusbar/policy/QSClockBellSound;): Ljava/lang/String; access=0x11 codeOff=7402740
+ METHOD isTurnOnShowingDateByQuickStar(): Z access=0x11 codeOff=7402684
+ METHOD notifyTimeChanged(Lcom/android/systemui/statusbar/policy/QSClockBellSound;): V access=0x11 codeOff=7403056
+ METHOD onApplyWindowInsets(Landroid/view/WindowInsets;): Landroid/view/WindowInsets; access=0x11 codeOff=7402600
+ METHOD onAttachedToWindow(): V access=0x11 codeOff=7403592
+ METHOD onConfigurationChanged(Landroid/content/res/Configuration;): V access=0x11 codeOff=7403632
+ METHOD onDarkChanged(Ljava/util/ArrayList;,F,I): V access=0x11 codeOff=7403692
+ METHOD onLayout(Z,I,I,I,I): V access=0x11 codeOff=7403792
+ METHOD setDependencies(Lcom/android/systemui/slimindicator/SlimIndicatorViewMediator;,Lcom/android/systemui/util/SettingsHelper;): V access=0x11 codeOff=7404152
+ METHOD setEllipsize(Landroid/text/TextUtils$TruncateAt;): V access=0x11 codeOff=7567780
+ METHOD setVisibility(I): V access=0x11 codeOff=7404180
