@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 tests/check_source.py
           python3 tests/check_additions.py
+          python3 tests/test_sign_helper.py
       - name: Test, lint, and build debug APK
         id: validation
         shell: bash
@@ -45,8 +46,10 @@ jobs:
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk dist/Fold8-Control-Lab-v16.apk
           cp app/build/outputs/apk/release/app-release-unsigned.apk dist/Fold8-Control-Lab-v16-unsigned.apk
-          clock_apk_digest="$(sha256sum dist/Fold8-Control-Lab-v16.apk | cut -d' ' -f1)"
-          sed "s/__APK_SHA256__/$clock_apk_digest/" tools/sign-v16-with-phone-key.sh > dist/sign-v16-with-phone-key.sh
+          bash tools/package-sign-helper.sh dist/Fold8-Control-Lab-v16.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/sign-v16-with-phone-key.sh
+          python3 tests/test_sign_helper_real.py dist/Fold8-Control-Lab-v16.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" "$JAVA_HOME"
           cd dist
           sha256sum Fold8-Control-Lab-v16.apk Fold8-Control-Lab-v16-unsigned.apk > SHA256SUMS
       - uses: actions/upload-artifact@v4

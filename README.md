@@ -41,20 +41,30 @@ that v15 APK**. Do not uninstall v15 merely to bypass this mismatch if you want
 to retain its private settings, looks and backups.
 
 Actions provides a checksum-pinned **signing-only** helper alongside the
-remotely compiled APK. Download both `Fold8-Control-Lab-v16.apk` and
-`sign-v16-with-phone-key.sh` to Downloads. In your existing Termux:
+remotely compiled APK. The corrected helper embeds a verified pure-Java SDK35
+signer and invokes your existing OpenJDK 26 binary directly (21/17 fallbacks),
+avoiding PATH-selected `java`/`apksigner` wrappers. Java option injection is
+cleared only in the signer subprocess. No package install or APK rebuild occurs.
+
+Download the helper to Downloads and keep the APK in Downloads/apps. In Termux:
 
 ```sh
-bash ~/storage/downloads/sign-v16-with-phone-key.sh
+bash ~/storage/downloads/sign-v16-fixed.sh ~/storage/downloads/apps/Fold8-Control-Lab-v16.apk
 ```
 
 The helper uses your existing
 `~/fold8-seconds-clock/private-signing-key.jks`, verifies the downloaded APK's
 exact hash and version, signs locally, checks the certificate against the
 supplied v15 certificate, and writes
-`Downloads/Fold8-Control-Lab-v16-update.apk`. It never generates/replaces a key,
+`Downloads/apps/Fold8-Control-Lab-v16-update.apk` (beside the input APK). It never generates/replaces a key,
 compiles, installs, enables a module, runs root, or restarts anything. A missing
 key or mismatch stops without saving an update. The private key stays on the phone.
+
+If an older helper prints `Native registration unable to find class ...
+ProtoLogNative; aborting`, its Java launcher failed before signature verification.
+That is not evidence of a corrupt APK. The fixed helper distinguishes runtime
+startup failure, signer failure, input verification failure and certificate
+mismatch. It accepts the original already-downloaded v16 APK without a rebuild.
 
 Install the verified `-update.apk` as an update, keep only this module enabled
 for **System UI (`com.android.systemui`)** in Vector, then reboot. In Clock

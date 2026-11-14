@@ -49,6 +49,28 @@ Any later documentation-only commit does not change this run's APK.
 
 ## Update signing and device limits
 
+### Signing-helper correction
+
+The owner's Termux screenshot showed an ART `ProtoLogNative` registration abort
+before signature verification. The original helper invoked a PATH-selected
+`apksigner`, while the supplied v15 builder explicitly activated JDK 26. The
+replacement selects that existing OpenJDK directly, embeds/pins Google's SDK35
+signer JAR, clears Java injection variables only inside child processes, and
+does not invoke phone `aapt` or the `apksigner` wrapper. The APK remains unchanged
+at SHA-256 `f47138d9998a5c65b79e7f60d24b9240627c0aca6e6fbf189aa3cc72fb84efbf`.
+
+Validation: 14 isolated shell regression tests passed, including wrong PATH
+wrappers, Java option injection, tampering, startup/process aborts, certificate
+mismatch and key/output preservation. A separately packaged real-JAR test on
+Cloud JDK17 rejected a disposable non-phone certificate and then successfully
+signed/verified a separate fixture pinned to that disposable test certificate.
+The delivered helper retains the owner's original certificate pin; no phone key
+was available or modified. It still needs execution on the owner's JDK26 phone.
+No Android app code changed or new APK was generated for this helper correction.
+
+Signer JAR SHA-256:
+`00ef9948f843fe395d2440ae3ef41405b8040a6d5d46493bd1902ac0ee6deae7`.
+
 The supplied v15 APK certificate SHA-256 is
 `619620638046dda1c81bbdeeca27481443c7f6b0918d782578025c31a031b6bf`.
 Actions signing does not match that certificate. A normal data-preserving update
