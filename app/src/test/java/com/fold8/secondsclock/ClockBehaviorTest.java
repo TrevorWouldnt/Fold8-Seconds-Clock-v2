@@ -9,8 +9,13 @@ import android.hardware.display.DisplayManager;
 import android.os.Looper;
 import android.os.LocaleList;
 import android.os.PowerManager;
+import android.os.Handler;
+import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.Display;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -31,6 +36,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35)
@@ -40,6 +46,8 @@ public class ClockBehaviorTest {
     private Activity activity;
     private FrameLayout parent;
     private TimeZone oldZone;
+    private ClockRuntime runtime;
+    private final AtomicLong wallTime = new AtomicLong(Instant.parse("2026-11-12T13:04:05Z").toEpochMilli());
 
     @Before public void setUp() {
         oldZone = TimeZone.getDefault();
@@ -64,9 +72,12 @@ public class ClockBehaviorTest {
         shadowOf(Looper.getMainLooper()).idle();
         controller.windowFocusChanged(true);
         assertEquals(android.view.View.VISIBLE, parent.getWindowVisibility());
+        runtime = new ClockRuntime(activity, new Handler(Looper.getMainLooper()), wallTime::get,
+                ClockOptions.defaults(), false);
     }
 
     @After public void tearDown() {
+        if (runtime != null) runtime.dispose();
         parent.removeAllViews();
         controller.pause().stop().destroy();
         TimeZone.setDefault(oldZone);
@@ -110,13 +121,14 @@ public class ClockBehaviorTest {
         TextView clock = new TextView(activity);
         parent.addView(clock);
         assertTrue(clock.isAttachedToWindow());
-        AtomicLong wallTime = new AtomicLong(Instant.parse("2026-11-12T13:04:05Z").toEpochMilli());
-        SecondsHook.refresh(clock, wallTime::get);
+        runtime.watch(clock, ClockRuntime.Kind.STATUS);
+        shadowOf(Looper.getMainLooper()).idle();
         String first = clock.getText().toString();
         assertTrue(diagnostics(clock), first.matches("\\d{2}:\\d{2}:\\d{2}"));
         // Samsung's own minute notification must be corrected immediately.
         clock.setText("Samsung minute text");
-        SecondsHook.refresh(clock);
+        runtime.watch(clock, ClockRuntime.Kind.STATUS);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
         assertNotEquals("Samsung minute text", clock.getText().toString());
         // Advancing Robolectric's looper does not advance java.lang.System's
         // real wall clock. Advance both inputs explicitly, without sleeping.
@@ -128,7 +140,8 @@ public class ClockBehaviorTest {
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3));
         assertEquals("detached sentinel", clock.getText().toString());
         parent.addView(clock);
-        SecondsHook.refresh(clock);
+        runtime.watch(clock, ClockRuntime.Kind.STATUS);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
         assertNotEquals("detached sentinel", clock.getText().toString());
     }
 
@@ -137,7 +150,7 @@ public class ClockBehaviorTest {
         parent.addView(clock);
         clock.setVisibility(android.view.View.GONE);
         clock.setText("hidden sentinel");
-        SecondsHook.refresh(clock);
+        runtime.watch(clock, ClockRuntime.Kind.STATUS);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));
         assertEquals("hidden sentinel", clock.getText().toString());
         clock.setVisibility(android.view.View.VISIBLE);
@@ -149,14 +162,113 @@ public class ClockBehaviorTest {
         TextView clock = new TextView(activity);
         parent.addView(clock);
         PowerManager power = activity.getSystemService(PowerManager.class);
-        shadowOf(power).setIsInteractive(false);
+        runtime.setAwake(false);
         clock.setText("sleep sentinel");
-        SecondsHook.refresh(clock);
+        runtime.watch(clock, ClockRuntime.Kind.STATUS);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));
         assertEquals("sleep sentinel", clock.getText().toString());
-        shadowOf(power).setIsInteractive(true);
+        runtime.setAwake(true);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
         assertNotEquals(diagnostics(clock), "sleep sentinel", clock.getText().toString());
+    }
+
+    @Test public void rootDoubleTapTogglesOnlyHitClockAndPreservesPendingSingleClick() {
+        TextView status = addClock(0, ClockRuntime.Kind.STATUS);
+        TextView shade = addClock(120, ClockRuntime.Kind.SHADE);
+        AtomicInteger clicks = new AtomicInteger();
+        status.setOnClickListener(v -> clicks.incrementAndGet());
+        tap(status);
+        assertTrue(runtime.deferClick(status));
+        assertEquals(0, clicks.get());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        tap(status);
+        assertTrue(runtime.deferClick(status));
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400));
+        assertFalse(runtime.options().statusSeconds);
+        assertTrue(runtime.options().shadeSeconds);
+        assertEquals("13:04", status.getText().toString());
+        assertEquals("13:04:05", shade.getText().toString());
+        assertEquals("Double tap cancels Samsung's deferred single click", 0, clicks.get());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400));
+        tap(status);
+        assertTrue(runtime.deferClick(status));
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(400));
+        assertEquals("A single tap still reaches the existing click listener", 1, clicks.get());
+    }
+
+    @Test public void dragAndTransparentClockCannotToggleSeconds() {
+        TextView clock = addClock(0, ClockRuntime.Kind.STATUS);
+        int[] location = new int[2]; clock.getLocationOnScreen(location);
+        event(clock.getRootView(), MotionEvent.ACTION_DOWN, location[0] + 10, location[1] + 10);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(80));
+        event(clock.getRootView(), MotionEvent.ACTION_MOVE, location[0] + 80, location[1] + 10);
+        event(clock.getRootView(), MotionEvent.ACTION_UP, location[0] + 80, location[1] + 10);
+        tap(clock);
+        assertTrue(runtime.options().statusSeconds);
+        clock.setAlpha(0);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        tap(clock);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        tap(clock);
+        assertTrue(runtime.options().statusSeconds);
+    }
+
+    @Test public void settingsControlFormatIndependentlyAndReattachResumesWithoutAnotherHook() {
+        TextView status = addClock(0, ClockRuntime.Kind.STATUS);
+        TextView shade = addClock(120, ClockRuntime.Kind.SHADE);
+        Bundle changes = new Bundle();
+        changes.putBoolean(ClockOptions.STATUS_SECONDS, false);
+        changes.putInt(ClockOptions.TIME_FORMAT, 12);
+        changes.putBoolean(ClockOptions.SHOW_AM_PM, true);
+        runtime.applyOptions(ClockOptions.defaults().withUpdates(changes));
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
+        assertTrue(status.getText().toString().startsWith("1:04"));
+        assertFalse(status.getText().toString().contains(":05"));
+        assertTrue(status.getText().toString().endsWith("PM"));
+        assertTrue(shade.getText().toString().contains("1:04:05"));
+        parent.removeView(shade);
+        shade.setText("detached");
+        parent.addView(shade);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
+        assertTrue(shade.getText().toString().contains("1:04:05"));
+    }
+
+    @Test public void secondsOffUsesMinuteCadenceAndDisablingGesturePreventsToggle() {
+        TextView clock = addClock(0, ClockRuntime.Kind.STATUS);
+        runtime.applyOptions(new ClockOptions(false, false, false, false, false, 24));
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
+        assertEquals("13:04", clock.getText().toString());
+        tap(clock);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100));
+        tap(clock);
+        assertFalse(runtime.options().statusSeconds);
+        wallTime.addAndGet(60_000);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(60));
+        assertEquals("13:05", clock.getText().toString());
+    }
+
+    private TextView addClock(int top, ClockRuntime.Kind kind) {
+        TextView clock = new TextView(activity);
+        FrameLayout.LayoutParams layout = new FrameLayout.LayoutParams(250, 90);
+        layout.topMargin = top;
+        parent.addView(clock, layout);
+        runtime.watch(clock, kind);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32));
+        return clock;
+    }
+
+    private void tap(TextView clock) {
+        int[] location = new int[2]; clock.getLocationOnScreen(location);
+        event(clock.getRootView(), MotionEvent.ACTION_DOWN, location[0] + 10, location[1] + 10);
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(50));
+        event(clock.getRootView(), MotionEvent.ACTION_UP, location[0] + 10, location[1] + 10);
+    }
+
+    private void event(View root, int action, float x, float y) {
+        long now = SystemClock.uptimeMillis();
+        MotionEvent event = MotionEvent.obtain(now, now, action, x, y, 0);
+        try { runtime.onTouch(root, event); }
+        finally { event.recycle(); }
     }
 
     private String diagnostics(TextView clock) {

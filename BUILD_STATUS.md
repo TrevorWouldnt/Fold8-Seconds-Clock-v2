@@ -1,5 +1,21 @@
 # Validation record
 
+## Version 0.3 revision
+
+- Version 0.1 was built successfully but the owner reported no visible effect
+  after reboot. Its on-device result is **unsuccessful**, not verified working.
+- Current revision adds status/shade controls, window-level double-tap detection,
+  persistent settings and launcher UI, alternate OEM acquisition paths, isolated
+  failures, and a shared screen-aware scheduler. No environment configuration was
+  reapplied or published during this revision.
+- Local checks: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` passed;
+  31 tests, zero failures/errors/skips. APK packaging and v2 signature verified.
+- Current GitHub Actions run/PR: recorded below when uploaded.
+- New device verification: not performed. The exact cause of the owner's 0.1
+  failure remains unconfirmed without its Vector log. Additional hooks and
+  diagnostics address identified weaknesses but are not proof of compatibility.
+- Original build evidence below is historical and describes the 0.1 artifact.
+
 ## Successful GitHub Actions build
 
 - Run: [Build research APK #8](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43183294712).

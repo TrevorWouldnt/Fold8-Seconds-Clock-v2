@@ -1,6 +1,11 @@
 package de.robv.android.xposed;
+import java.lang.reflect.Member;
+import java.util.Set;
 public class XposedBridge {
     // Used by JVM tests only. Vector supplies these methods on the phone.
     public static void log(String message) { System.err.println(message); }
     public static void log(Throwable t) { t.printStackTrace(); }
+    public static XC_MethodHook.Unhook hookMethod(Member member, XC_MethodHook callback) { throw new UnsupportedOperationException(); }
+    public static Set<XC_MethodHook.Unhook> hookAllMethods(Class<?> clazz, String name, XC_MethodHook callback) { throw new UnsupportedOperationException(); }
+    public static Set<XC_MethodHook.Unhook> hookAllConstructors(Class<?> clazz, XC_MethodHook callback) { throw new UnsupportedOperationException(); }
 }

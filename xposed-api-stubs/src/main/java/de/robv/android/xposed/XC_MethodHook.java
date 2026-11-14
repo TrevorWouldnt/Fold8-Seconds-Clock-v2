@@ -8,5 +8,6 @@ public abstract class XC_MethodHook {
     public static class MethodHookParam {
         public Object thisObject;
         public Object[] args;
+        public void setResult(Object result) { throw new UnsupportedOperationException(); }
     }
 }

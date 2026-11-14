@@ -1,7 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application android:label="Fold8 Seconds Clock" android:allowBackup="false">
+        <activity android:name=".SettingsActivity" android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <provider android:name=".SettingsProvider"
+            android:authorities="com.fold8.secondsclock.settings"
+            android:exported="true" android:directBootAware="true" />
         <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="One UI Fold8 seconds clock research hook" />
+        <meta-data android:name="xposeddescription" android:value="Seconds and double-tap controls for Samsung status-bar and Quick Settings clocks" />
         <meta-data android:name="xposedminversion" android:value="82" />
         <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
     </application>
