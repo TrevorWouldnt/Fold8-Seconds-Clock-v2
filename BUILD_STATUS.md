@@ -10,7 +10,18 @@
   reapplied or published during this revision.
 - Local checks: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` passed;
   31 tests, zero failures/errors/skips. APK packaging and v2 signature verified.
-- Current GitHub Actions run/PR: recorded below when uploaded.
+- Final code commit: `3883ba91bef7e502968a166429b4f6f68ef079df`.
+- [GitHub Actions run 43573750099](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43573750099)
+  completed successfully: 31 tests, zero failures/errors/skips, lint, assembly,
+  signature and DEX checks. [PR #1](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/1)
+  contains this feature revision; main was preserved for review.
+- [APK artifact 14104769803](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43573750099/artifacts/14104769803)
+  is named `Fold8-Seconds-Clock-UNTESTED`. It contains `app-debug.apk` and its
+  checksum. The downloaded artifact's APK checksum, version code 3/name
+  `0.3-clocks-and-gestures`, launcher activity, v2 signature, and exclusion of
+  Xposed API stubs were independently verified after download.
+- Exact Gradle validation command:
+  `./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 - New device verification: not performed. The exact cause of the owner's 0.1
   failure remains unconfirmed without its Vector log. Additional hooks and
   diagnostics address identified weaknesses but are not proof of compatibility.

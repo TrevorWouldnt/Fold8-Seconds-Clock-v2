@@ -9,6 +9,11 @@ Version 0.3 adds additional clock acquisition paths, real double-tap handling,
 settings, and diagnostics. Its build and simulated tests do not prove it works
 on the owner's Android 17 / One UI 9 phone. See [BUILD_STATUS.md](BUILD_STATUS.md).
 
+[Download version 0.3](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43573750099/artifacts/14104769803)
+(GitHub sign-in required). Extract and install `app-debug.apk`.
+[Build evidence](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43573750099)
+and [source PR #1](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/1).
+
 ## Features
 
 - Separate seconds switches for the status-bar and Quick Settings shade clocks.
