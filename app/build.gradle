@@ -1,12 +1,11 @@
-plugins { id 'com.android.application' }
-
+plugins {
+    id 'com.android.application'
+}
 configurations { robolectricSdk }
-
 def prepareRobolectricSdk = tasks.register('prepareRobolectricSdk', Copy) {
     from configurations.robolectricSdk
     into layout.buildDirectory.dir('robolectric-sdk')
 }
-
 android {
     namespace 'com.fold8.secondsclock'
     compileSdk 35
@@ -14,8 +13,8 @@ android {
         applicationId 'com.fold8.secondsclock'
         minSdk 29
         targetSdk 35
-        versionCode 1
-        versionName '0.1-research-prototype'
+        versionCode 16
+        versionName '1.6'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -25,17 +24,12 @@ android {
         unitTests.includeAndroidResources = true
         unitTests.all {
             dependsOn prepareRobolectricSdk
-            // Resolve once through Gradle (with its cache/retries), rather than
-            // starting parallel Maven downloads inside each test sandbox.
             systemProperty 'robolectric.offline', 'true'
             systemProperty 'robolectric.dependency.dir', layout.buildDirectory.dir('robolectric-sdk').get().asFile.absolutePath
         }
     }
 }
-
 dependencies {
-    // Signatures only; Vector supplies the Xposed API at runtime.
-    // This library is not bundled inside the resulting APK.
     compileOnly project(':xposed-api-stubs')
     testImplementation project(':xposed-api-stubs')
     testImplementation 'junit:junit:4.13.2'

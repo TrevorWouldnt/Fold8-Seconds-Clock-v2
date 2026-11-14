@@ -2,7 +2,7 @@ name: Build research APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'codex/control-lab-v16']
   pull_request:
     branches: [main]
 jobs:
@@ -25,10 +25,15 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
           .github/scripts/install-android-sdk.sh
       - uses: gradle/actions/setup-gradle@v4
+      - name: Check v15 feature preservation and reviewed source hashes
+        run: |
+          python3 tests/check_source.py
+          python3 tests/check_additions.py
+          python3 tests/test_sign_helper.py
       - name: Test, lint, and build debug APK
         id: validation
         shell: bash
-        run: ./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug 2>&1 | tee build-validation.log
+        run: ./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease 2>&1 | tee build-validation.log
       - name: Report validation results
         if: always() && steps.validation.outcome != 'skipped'
         env:
@@ -38,16 +43,25 @@ jobs:
         run: |
           python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
-          cd app/build/outputs/apk/debug
-          sha256sum app-debug.apk > app-debug.apk.sha256
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/Fold8-Control-Lab-v16.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk dist/Fold8-Control-Lab-v16-unsigned.apk
+          bash tools/package-sign-helper.sh dist/Fold8-Control-Lab-v16.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/sign-v16-with-phone-key.sh
+          python3 tests/test_sign_helper_real.py dist/Fold8-Control-Lab-v16.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" "$JAVA_HOME"
+          cd dist
+          sha256sum Fold8-Control-Lab-v16.apk Fold8-Control-Lab-v16-unsigned.apk > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: Fold8-Seconds-Clock-UNTESTED
+          name: Fold8-Control-Lab-v16-UNTESTED
           if-no-files-found: error
           retention-days: 30
           path: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/debug/app-debug.apk.sha256
+            dist/Fold8-Control-Lab-v16.apk
+            dist/Fold8-Control-Lab-v16-unsigned.apk
+            dist/SHA256SUMS
+            dist/sign-v16-with-phone-key.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
