@@ -1,99 +1,97 @@
-# Fold8 Seconds Clock
+# Fold8 Control Lab v1.6
 
-Experimental legacy Xposed module for the **existing Vector framework** on a
-rooted Samsung Galaxy Z Fold8 (Android 17 / One UI 9). It writes seconds into
-Samsung's existing `QSClockIndicatorView` TextView. It creates no overlay and
-does not patch, re-sign, or replace Samsung's SystemUI APK.
+Built from the owner's **Fold8-Control-Lab-v15** source and APK, preserving Clock
+Studio, live previews, bubble styles/padding, looks A–H, backups/import/export,
+Appearance Studio, the device dashboard, and the root toolbox. This is the
+Control Lab continuation; it is not the smaller v0.3 app from the earlier PR.
 
-**An APK build is not proof of device compatibility. No phone testing has been
-performed.** See [BUILD_STATUS.md](BUILD_STATUS.md) for the validation record.
+## Changes
 
-[GitHub Actions build #8 passed](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43183294712):
-six Android unit tests, lint, APK assembly, signature and packaging checks.
-Download **Fold8-Seconds-Clock-UNTESTED** from that run's Artifacts section.
+- Status-bar double-tap still toggles the **bubble**, as in v15. The recognizer
+  now observes the clock's containing window before Samsung can intercept child
+  touches. It does not replace touch listeners or force clocks to be clickable.
+- Seconds in the pull-down notification/Quick Settings header and panel clocks,
+  with a separate setting and optional double-tap seconds toggle.
+- Optional gesture haptics and AM/PM, included in settings, looks and backups.
+  Old v15 backups still load with compatible defaults for new fields.
+- One shared timer, pause on screen-off, no formatting while hidden/transparent,
+  and minute cadence when visible clocks have seconds disabled. Settings are
+  cached and observed; provider reads and gesture persistence run outside the
+  SystemUI main thread. Formatting and unchanged bubble drawables are reused.
+- Each OEM hook is optional and independent; Android attach listeners handle
+  cleanup. Shade clocks retain their original font, colors and background.
 
-## Hook and behavior
+The v15 font/contrast/bubble/padding/inset styling helper code is preserved
+verbatim. Unknown date-only, lock-screen and AOD clock classes are not guessed.
+No overlay, stock SystemUI APK replacement, kernel change, or automatic root
+command is introduced. Existing explicit SystemUI restart/root-tool controls
+retain their confirmation and tap requirements.
 
-The supplied `reference/*.txt` identify
-`com.android.systemui.statusbar.policy.QSClockIndicatorView`, its
-`onAttachedToWindow()` and `notifyTimeChanged(QSClockBellSound)` methods, and
-`PhoneStatusBarClockManager.mClockView`. These notes came from earlier static
-analysis; they are not independently verified disassembly in this repository.
-The separately uploaded Samsung APK exceeds this environment's 32 MiB transfer
-limit and was not available for renewed inspection. It is not committed here.
+## Signing and updating v15 without losing its data
 
-The module:
+The supplied v15 APK uses the owner's existing **phone-local signing key**.
+That private key is not included in the source or extractable from an APK.
+Cloud/Actions debug signing therefore **cannot install as a normal update over
+that v15 APK**. Do not uninstall v15 merely to bypass this mismatch if you want
+to retain its private settings, looks and backups.
 
-- Loads only in the main `com.android.systemui` process.
-- Updates attached clock views on the main UI thread, aligned to wall-clock
-  second boundaries; corrects Samsung's subsequent clock notifications.
-- Uses Android attach-state listeners for cleanup, rather than assuming an
-  undocumented Samsung detach method. Each display's attached view gets a ticker.
-- Respects 12/24-hour settings, locale and timezone changes, and skips painting
-  hidden views, an off display, or the always-on display. No wake lock is used.
-- Logs with `[Fold8Seconds]`, and stops further writes for that SystemUI process
-  after the first unexpected runtime failure.
-
-It preserves the existing view's position, font and tint. Its simple time text
-replaces QuickStar date/custom text and omits AM/PM for a compact 12-hour clock.
-Extra width may affect icon space or clipping; this must be tested on both
-screens. Other modules writing to the same view can still overwrite its text.
-
-## Build and checks
-
-Requirements: JDK 17, Android SDK platform 35 and build-tools 35.0.0, Python 3.
-The checked-in Gradle 8.11.1 wrapper verifies its distribution SHA-256.
+Actions provides a checksum-pinned **signing-only** helper alongside the
+remotely compiled APK. Download both `Fold8-Control-Lab-v16.apk` and
+`sign-v16-with-phone-key.sh` to Downloads. In your existing Termux:
 
 ```sh
-./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
-"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
+bash ~/storage/downloads/sign-v16-with-phone-key.sh
 ```
 
-Output: `app/build/outputs/apk/debug/app-debug.apk`, application ID
-`com.fold8.secondsclock`. This is a standard debug-signed, installable APK,
-with no launcher activity; manage it in Vector or Android Settings.
+The helper uses your existing
+`~/fold8-seconds-clock/private-signing-key.jks`, verifies the downloaded APK's
+exact hash and version, signs locally, checks the certificate against the
+supplied v15 certificate, and writes
+`Downloads/Fold8-Control-Lab-v16-update.apk`. It never generates/replaces a key,
+compiles, installs, enables a module, runs root, or restarts anything. A missing
+key or mismatch stops without saving an update. The private key stays on the phone.
 
-The Robolectric tests exercise clock formatting, settings/locale/timezone
-changes, second alignment, ticking, detach/reattach, and hidden/sleeping views.
-They do not emulate Samsung SystemUI or prove the OEM hook signatures.
-`tools/verify_apk.py` checks actual DEX class definitions to ensure the minimal
-compile-only Xposed API stubs are **not bundled**. Their runtime implementation
-comes from Vector. The `findAndHookMethod` return type must be
-`XC_MethodHook.Unhook`; returning `Object` in a stub produces a different JVM
-method descriptor and fails at runtime, even if compilation succeeds.
+Install the verified `-update.apk` as an update, keep only this module enabled
+for **System UI (`com.android.systemui`)** in Vector, then reboot. In Clock
+Studio enable **Double-tap clock to toggle bubble**, and select **Apply clock
+settings**. For the shade use **Show seconds in Quick Settings** and, if wanted,
+**Double-tap Quick Settings clock to toggle seconds**. New gestures remain
+opt-in, preserving v15's defaults. Test both cover and inner displays, shade
+drags/single taps, screen-off/on, and reboot persistence. Keep your v15 APK and
+existing recovery method available. Compatibility remains unverified until
+the owner tests this revision on the phone.
 
-GitHub Actions builds on pushes to `main`, pull requests, or manual dispatch.
-Open the successful **Build research APK** run under
-[Actions](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/workflows/build-apk.yml),
-then download artifact **Fold8-Seconds-Clock-UNTESTED** and extract
-`app-debug.apk`. A checksum is included. GitHub sign-in may be needed to download
-artifacts. Artifacts expire after 30 days; rerun the workflow when necessary.
-Debug signing keys can differ between local builds and separate Actions runs;
-if Android reports an incompatible update, disable the module and reboot,
-uninstall the previous build, and install the new one.
+The separately supplied unsigned release APK is for users who already have
+their own signing workflow. An Actions/debug-signed APK is useful for a fresh
+install but is not signed by the owner's phone key.
 
-## Install on the phone
+## Build and evidence
 
-1. Before activation, confirm you can use your existing KernelSU/Vector recovery
-   method to disable this module if SystemUI will not start. No framework changes
-   or other-module isolation tests are required.
-2. Download the build artifact on your phone, extract it, and install
-   `app-debug.apk` through Android's package installer. Allow installation from
-   that browser/file manager when Android asks.
-3. In **Vector → Modules**, enable **Fold8 Seconds Clock**. Select only
-   **System UI (`com.android.systemui`)** as its scope. Reboot.
-4. Watch the permanent status-bar clock for at least a minute. Verify seconds
-   advance each second, including across a minute boundary. Test the cover and
-   inner screens, folding/unfolding, screen off/on, and your 12/24-hour setting.
-5. Check Vector's SystemUI/module logs for `[Fold8Seconds] installed hooks` and
-   `[Fold8Seconds] attached status-bar clock ticker`. A `disabled ... after error`
-   entry includes the exception and means the module stopped writing.
+JDK 17, SDK platform 35/build-tools 35.0.0, AGP 8.9.2, and the checksum-pinned
+Gradle 8.11.1 wrapper. All compilation can run remotely:
 
-Rollback: disable **this module** in Vector and reboot, then uninstall it if
-wanted. If SystemUI is inaccessible, use your already-verified recovery method
-to disable this module or the framework's loading of it, then reboot.
-Never install the supplied Samsung-SystemUI APK as a replacement.
+```sh
+python3 tests/check_source.py
+python3 tests/check_additions.py
+./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
+```
 
-`CODEX_HANDOFF.md`, `AGENTS.md`, and `reference/` retain the original handoff
-context; follow-up message templates are historical notes, not build evidence.
+Actions uploads **Fold8-Control-Lab-v16-UNTESTED** with the signed debug APK,
+unsigned release APK, checksums, and phone-signing helper. A `checks` artifact
+contains Android test/lint/build reports. See [BUILD_STATUS.md](BUILD_STATUS.md).
+Artifacts expire after 30 days. Xposed API stubs are compile-only and checked
+absent from the APK; Vector supplies them at runtime. Tests use simulated
+Android API 35; they do not prove Samsung Android 17 / One UI 9 hook behavior.
+
+The optional `QSClockHeaderView` / `QSClockPanelView` shade names are supported
+by public older Samsung code, not independently verified on this firmware.
+Logs use `[Fold8ControlLab]`. Existing Control Center root tools can collect
+relevant Vector/SystemUI messages when explicitly tapped.
+
+[Source provenance](docs/SOURCE_PROVENANCE.md), [original v15 guide](docs/V15_README.md),
+and [feature catalog](FEATURES.md) record the supplied baseline. The original
+Termux **v15** builder is retained for reference; use the remote Gradle workflow
+and signing-only helper above for v16. The old `v15-baseline.sha256` hashes are
+historical evidence; `clock-core.sha256` pins the intentionally reviewed v16
+sources and is not a claim of unchanged hooks or device validation.

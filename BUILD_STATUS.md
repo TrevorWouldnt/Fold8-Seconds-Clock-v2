@@ -1,74 +1,53 @@
-# Validation record
+# Fold8 Control Lab v1.6 validation
 
-## Successful GitHub Actions build
+## Correct baseline
 
-- Run: [Build research APK #8](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43183294712).
-- Final run conclusion: **success**.
-- Built code commit: `e187615312e8a0e2f4361ae2cbfaad85f2ee5074`.
-- Exact Gradle command (from the repository root):
-  `./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
-- Android unit tests: **6 executed, 0 failures, 0 errors, 0 skipped**.
-- Android lint and APK assembly: passed.
-- Packaging verification: passed; `assets/xposed_init` points to the module;
-  actual DEX class definitions contain no bundled Xposed API stubs.
-- Android `apksigner verify --verbose`: passed for the debug APK.
-- Generated APK: `app/build/outputs/apk/debug/app-debug.apk`.
-- Uploaded artifact: **Fold8-Seconds-Clock-UNTESTED**, ID `13927226926`.
-  Download it from the run's Artifacts section, then extract `app-debug.apk`.
-  It includes `app-debug.apk.sha256`; GitHub sign-in is needed for downloads.
-- Artifact ZIP digest reported by GitHub (this is **not** the APK checksum):
-  `448afe323f4734200f2dea3fa059662e1874cbfabfbc40c55a4b1a56fca0025b`.
-- An additional `checks` artifact contains build logs, unit-test and lint reports.
-- Artifacts are retained for 30 days. The workflow is saved in the repository
-  and can rebuild them remotely without a local computer.
+This revision starts from the owner's Fold8-Control-Lab-v15 source and signed
+APK, not the smaller v0.3 module. See [source provenance](docs/SOURCE_PROVENANCE.md)
+for input hashes and the v15 certificate. All four original core source pins
+matched before intentional changes. Original appearance preferences, diagnostics,
+extra UI preference implementation, and bubble/font/contrast/padding/inset
+helper code were preserved byte for byte. Original screens, looks and backups
+were extended, not replaced. The prior smaller-app PR is superseded.
 
-The successful run uses Ubuntu 24.04, JDK 17, checksum-pinned Android command-line
-tools 12.0, SDK platform 35 / build-tools 35.0.0, AGP 8.9.2, and the
-checksum-pinned Gradle 8.11.1 wrapper. Robolectric 4.14.1 simulates API 35, not
-Samsung Android 17. Its framework JAR is resolved once through Gradle's cache.
+## Local validation
 
-## Local build and limitations
+- Exact command: `./gradlew --no-daemon --max-workers=4 :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease`.
+- Toolchain: JDK 17.0.17+10, Gradle 8.11.1, AGP 8.9.2, Android SDK 35 / build-tools 35.0.0.
+- **42 tests executed, zero failures/errors/skips**: configuration/provider and
+  backward-compatible backups/presets (8), original UI/tool safety (2), clock
+  styling/scaling/ticker lifecycle (5), recognizer (15), window gesture integration (12).
+- Android lint passed after correcting a v15 numeric typeface constant. No lint
+  baseline or disabled assertion was introduced.
+- Debug APK: `app/build/outputs/apk/debug/app-debug.apk`.
+- Unsigned release: `app/build/outputs/apk/release/app-release-unsigned.apk`.
+- Debug APK's v2 signature, package/version 16 / 1.6, launcher activity, Xposed
+  entry and absence of packaged Xposed API stub class definitions verified.
+- Source preservation checks `tests/check_source.py` and `tests/check_additions.py` passed.
+- Signing helper shell syntax checked. It has not run with the owner's phone key;
+  that private key is unavailable in Cloud and remains on the phone.
 
-- Source was imported from the supplied `Fold8-Seconds-Clock-Codex-Handoff.zip`.
-- A separate local `:app:assembleDebug` succeeded using checksum-verified
-  Temurin JDK 17.0.17+10. The resulting local APK's v2 signature and module
-  packaging verified. Its application ID is `com.fold8.secondsclock`,
-  minSdk 29, targetSdk 35; no launcher activity is expected.
-- Local APK SHA-256:
-  `13369835d72bc0c3ff4e551716a5db880947b553aa920d3de826b6e5b03d3038`.
-  Debug signing differs between local and hosted builds, so do not use this hash
-  to check the Actions APK; use the checksum inside its artifact instead.
-- Local test/lint execution was blocked by the cloud network policy denying a
-  Maven redirect to `gcp.mirrors.maven.org`. GitHub Actions subsequently executed
-  and passed the complete checks above; no local passing test run is claimed.
-- The GitHub API is blocked locally at `api.github.com`. Git push and public
-  GitHub run pages worked, so repository upload and Actions validation completed
-  without API access. Draft additions for both hosts were saved; they have not
-  been claimed applied or published. Review/save/publish them in environment
-  settings if local test reruns or API access are wanted.
-- Samsung APK reinspection was blocked by the attachment downloader's 32 MiB
-  transfer limit. OEM signatures were reviewed from the bundled text notes;
-  the supplied APK was not re-disassembled or independently hash-verified.
-  No proprietary Samsung binaries were committed.
-- The corrected `findAndHookMethod` return descriptor was checked against the
-  upstream XposedBridge source and the compiled module bytecode.
+## Hosted build
 
-## Concurrent-session audit
+GitHub Actions runs the same source checks, tests, lint and build targets, verifies
+the debug APK, and packages named APKs, checksums and a signing-only helper pinned
+to the exact downloadable debug APK hash. Run and artifact links are recorded
+after completion. The feature branch/PR preserves main for review.
 
-At built commit `e187615312e8a0e2f4361ae2cbfaad85f2ee5074`, all **34 tracked
-files** were compared byte for byte with a fresh GitHub archive of that exact
-commit. There were no differences, extra/missing remote files, uncommitted
-changes, or unexpected commits/branches. `git fsck --full` passed. The original
-handoff ZIP's SHA-256 remained
-`df8154c013df5b96095cb2fe4f56d2663dc4bbbdd0acc5fb3624be233403bfda`.
-Only expected Gradle/build outputs were ignored. No reset or force push was used.
-Documentation may be updated after the built code commit; it does not change
-that run's APK. This audit is evidence at the inspected commit, not a guarantee
-against future edits by another session.
+## Update signing and device limits
 
-## Phone verification
+The supplied v15 APK certificate SHA-256 is
+`619620638046dda1c81bbdeeca27481443c7f6b0918d782578025c31a031b6bf`.
+Actions signing does not match that certificate. A normal data-preserving update
+requires the existing original key. The provided signing-only helper verifies the
+input APK/hash/version, signs with the existing phone-local key, compares the
+resulting certificate with v15, and only then saves an update APK. It compiles,
+installs and restarts nothing. Do not uninstall v15 just to bypass a signature
+error without preserving its data.
 
-**Not installed or tested on the phone.** A successful build and simulated tests
-do not verify Vector loading, Samsung hook compatibility, status-bar layout, or
-runtime safety on this firmware. Follow the install and rollback instructions
-in README.md and verify your recovery method before activating the module.
+No physical device or Vector native-hook test occurred. Automated tests use
+simulated Android API 35. The optional shade class names are drawn from public
+older Samsung code and still need verification on the owner's Android 17 / One
+UI 9 firmware. No stock SystemUI APK, kernel, root framework or environment
+configuration was changed or published. Existing explicit root-tool/restart
+actions were preserved but never executed during development/testing.

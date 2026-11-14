@@ -1,0 +1,4 @@
+3eb7f73db23b54fd03ae21f60ac3c9f0a690db2ece84fe4835fd5b751c14154c  app/src/main/java/com/fold8/secondsclock/SecondsHook.java
+564e3429c2fdf08a1e1d4e83476a6dd4f801355e31f88967d52db3f1eee6a842  app/src/main/java/com/fold8/secondsclock/ClockConfig.java
+f45b1b2f98e5b0ef24e217786ed23c71b786f1aa2fec543f34d12d31e2e3f324  app/src/main/java/com/fold8/secondsclock/ClockSettingsProvider.java
+13e201c171c9435034b8618257a6035bc896b89d03f963967c0c79abaaa9f2ed  app/src/main/assets/xposed_init
