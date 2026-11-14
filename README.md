@@ -41,12 +41,16 @@ that v15 APK**. Do not uninstall v15 merely to bypass this mismatch if you want
 to retain its private settings, looks and backups.
 
 Actions provides a checksum-pinned **signing-only** helper alongside the
-remotely compiled APK. The corrected helper embeds a verified pure-Java SDK35
+remotely compiled APK. The helper inside the original run 43576690674 is
+superseded by `sign-v16-fixed.sh`, delivered in the support chat for that same
+APK. Keep the already-downloaded APK and use that replacement helper. Future
+Actions builds package the corrected helper as `sign-v16-with-phone-key.sh`.
+The corrected helper embeds a verified pure-Java SDK35
 signer and invokes your existing OpenJDK 26 binary directly (21/17 fallbacks),
 avoiding PATH-selected `java`/`apksigner` wrappers. Java option injection is
 cleared only in the signer subprocess. No package install or APK rebuild occurs.
 
-Download the helper to Downloads and keep the APK in Downloads/apps. In Termux:
+Download `sign-v16-fixed.sh` to Downloads and keep the APK in Downloads/apps. In Termux:
 
 ```sh
 bash ~/storage/downloads/sign-v16-fixed.sh ~/storage/downloads/apps/Fold8-Control-Lab-v16.apk
