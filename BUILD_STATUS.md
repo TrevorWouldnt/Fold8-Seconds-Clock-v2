@@ -29,10 +29,23 @@ were extended, not replaced. The prior smaller-app PR is superseded.
 
 ## Hosted build
 
-GitHub Actions runs the same source checks, tests, lint and build targets, verifies
-the debug APK, and packages named APKs, checksums and a signing-only helper pinned
-to the exact downloadable debug APK hash. Run and artifact links are recorded
-after completion. The feature branch/PR preserves main for review.
+[GitHub Actions run 43576690674](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43576690674)
+completed successfully for commit `e037978a768fb7b4ca3813f9606034b1aa37722e`.
+It passed both source contracts, all **42 tests** (zero failures/errors/skips),
+Android lint, debug/release assembly, signature and DEX packaging checks.
+
+[Artifact 14106219555](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43576690674/artifacts/14106219555)
+is named `Fold8-Control-Lab-v16-UNTESTED`. Its downloaded APKs matched SHA256SUMS;
+the debug APK's signature/version 16/name 1.6, ControlLabActivity launcher and
+absence of Xposed stubs were independently rechecked. Debug APK SHA-256:
+`f47138d9998a5c65b79e7f60d24b9240627c0aca6e6fbf189aa3cc72fb84efbf`.
+The signing-only helper contains that exact input hash and the supplied v15
+certificate hash. Its shell syntax verified; original phone-key signing remains
+unexecuted in Cloud because the key is absent.
+
+[PR #2](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/2) contains
+the corrected Control Lab continuation. Main remains preserved for review.
+Any later documentation-only commit does not change this run's APK.
 
 ## Update signing and device limits
 

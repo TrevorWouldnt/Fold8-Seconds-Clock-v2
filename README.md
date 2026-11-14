@@ -5,6 +5,11 @@ Studio, live previews, bubble styles/padding, looks A–H, backups/import/export
 Appearance Studio, the device dashboard, and the root toolbox. This is the
 Control Lab continuation; it is not the smaller v0.3 app from the earlier PR.
 
+[Download the v16 artifact](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43576690674/artifacts/14106219555)
+or inspect the [successful build](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43576690674)
+and [source PR #2](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/2).
+Read the signing instructions below before updating an existing v15 installation.
+
 ## Changes
 
 - Status-bar double-tap still toggles the **bubble**, as in v15. The recognizer
