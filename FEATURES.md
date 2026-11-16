@@ -1,4 +1,4 @@
-# Fold8 Control Lab v1.6 · Existing v1.5 capabilities and additions
+# Fold8 Control Lab v1.7 · Existing v1.5 capabilities and additions
 
 This catalog describes real source-level implementations, not a speculative roadmap. They require an Android build and a device test before being treated as proven on the Fold8. Several tools are *read-only readings*, not System UI modifications. Numbers are provided so work can be audited, not to inflate the scope with empty toggles.
 
@@ -123,6 +123,13 @@ This catalog describes real source-level implementations, not a speculative road
 105. Enable optional haptic confirmation after either clock gesture.
 106. Show optional AM/PM in 12-hour time; new options persist in looks/backups and old v15 imports remain supported.
 
-**Safety scope:** The original v15 source and core hashes were verified before import. The v16 hook, provider and configuration are intentionally updated for these requested fixes; original pins remain in `tests/v15-baseline.sha256`, and reviewed new pins are separate. Existing styling helpers and appearance/diagnostic preference implementations were preserved. Nothing automatically installs, restarts SystemUI, modifies the kernel or edits system files. Existing root toolbox actions and the explicitly confirmed restart action require direct user taps. Backup deletion, preset overwrites, and restoration/import confirmation remain intact.
+## v1.7 recovery
 
-**Limits:** Depending on Samsung firmware, current/charge-counter readings or certain log files may be unavailable. The dashboard says so; it doesn't pretend unavailable readings are zero. The power estimate is battery-side, not a measurement of charger wattage. Real device compatibility and performance are pending on-phone build and testing.
+107. Keep core time updates independent of optional visual styling failures.
+108. Recover interrupted clock scheduling through a bounded, low-frequency watchdog.
+109. Renew window observers after clock reattachment and recover missed wake notifications from positive device-state evidence.
+110. Respect deliberately disabled seconds while recovering clock updates; retain minute cadence when seconds are disabled.
+
+**Safety scope:** The original v15 source and core hashes were verified before import. The current hook, provider and configuration are intentionally updated for requested fixes; original pins remain in `tests/v15-baseline.sha256`, and reviewed new pins are separate. Existing styling algorithms and appearance/diagnostic preference implementations were preserved. Nothing automatically installs, restarts SystemUI, modifies the kernel or edits system files. Existing root toolbox actions and the explicitly confirmed restart action require direct user taps. Backup deletion, preset overwrites, and restoration/import confirmation remain intact.
+
+**Limits:** Depending on Samsung firmware, current/charge-counter readings or certain log files may be unavailable. The dashboard says so; it doesn't pretend unavailable readings are zero. The power estimate is battery-side, not a measurement of charger wattage. Recovery cannot guarantee updates while SystemUI is frozen/killed or Vector has not loaded the hook. Current revision build and real device compatibility/performance validation are pending.

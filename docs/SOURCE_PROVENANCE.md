@@ -17,11 +17,13 @@ preserved outside the checkout. Their embedded/extracted source hashes matched.
 The source import matched all four original pinned core hashes before edits.
 The original pins remain in `tests/v15-baseline.sha256`. User-requested hook,
 configuration/provider and gesture fixes intentionally change those sources;
-the reviewed v16 pins are kept separately in `tests/clock-core.sha256`.
+the reviewed current pins are kept separately in `tests/clock-core.sha256`.
 
 Font scaling, contrast calculation, bubble drawable creation, full padding,
 inset styling and restoration helpers were compared against v15 and remain
-byte-identical. AppearancePrefs.java, LabDiagnostics.java and LabUiPrefs.java
+byte-identical in v16. v17 changes lifecycle/error isolation around these
+styling algorithms to keep the core time update independent of visual failures.
+AppearancePrefs.java, LabDiagnostics.java and LabUiPrefs.java
 also remain byte-identical. UI, JSON backups and looks were extended rather
 than replaced. The existing root toolbox and explicit confirmed restart action
 were not executed during cloud development or tests.
@@ -30,3 +32,8 @@ No proprietary Samsung SystemUI binary is committed. Its previous signature
 notes remain references; public older Samsung sources only identify optional
 shade hook names, not confirmed One UI 9 behavior. The original v15 docs are
 preserved verbatim as V15_README.md and V15_FEATURES.md.
+
+The v17 revision continues from the complete v16 Control Lab branch after the
+owner reported that seconds stopped. This is not a replacement with the smaller
+v0.3 app. The report alone does not identify the exact on-device cause, and the
+new recovery paths remain unverified on the owner's phone until tested.

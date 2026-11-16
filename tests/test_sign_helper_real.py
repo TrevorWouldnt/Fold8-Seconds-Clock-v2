@@ -11,6 +11,8 @@ import tempfile
 
 root = Path(__file__).resolve().parent.parent
 apk, jar, jdk = map(lambda p: Path(p).resolve(), sys.argv[1:4])
+version = sys.argv[4] if len(sys.argv) > 4 else "16"
+assert version.isdigit() and int(version) > 0, "Expected a positive app version"
 with tempfile.TemporaryDirectory(prefix="fold8-real-sign-test-") as directory:
     work = Path(directory)
     key = work / "test-only.jks"
@@ -26,7 +28,7 @@ with tempfile.TemporaryDirectory(prefix="fold8-real-sign-test-") as directory:
     original_key_hash = hashlib.sha256(key.read_bytes()).hexdigest()
     helper = work / "packaged-helper.sh"
     subprocess.run(["bash", str(root / "tools/package-sign-helper.sh"), str(apk),
-                    str(jar), str(helper)], check=True, capture_output=True)
+                    str(jar), str(helper), version], check=True, capture_output=True)
     output = work / "update.apk"
     environment.update(FOLD8_JAVA=str(java), FOLD8_KEYSTORE=str(key), FOLD8_OUTPUT_APK=str(output))
     # The child must clear options that would otherwise prevent OpenJDK startup.
@@ -58,4 +60,5 @@ with tempfile.TemporaryDirectory(prefix="fold8-real-sign-test-") as directory:
     assert certificate_hash in verification
     assert hashlib.sha256(key.read_bytes()).hexdigest() == original_key_hash
     assert hashlib.sha256(apk.read_bytes()).hexdigest() in helper.read_text()
+    assert "clock_version='" + version + "'" in helper.read_text()
     print("PASS: separate test-certificate fixture saved a valid signed APK; existing test key unchanged")

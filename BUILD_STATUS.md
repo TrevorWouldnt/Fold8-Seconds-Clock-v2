@@ -1,4 +1,42 @@
-# Fold8 Control Lab v1.6 validation
+# Fold8 Control Lab v1.7 validation
+
+## Current v17 status
+
+The owner reported that seconds stopped after the previous revision. The exact
+on-phone failure has not been identified from a runtime log. v17 addresses
+source-level scheduling, wake/lifecycle and styling-failure risks while
+preserving the full v15 Control Lab application and its settings.
+
+Local validation **passed** on 2026-11-16. Exact command:
+
+```sh
+python /workspace/toolchains/run-gradle.py :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+```
+
+Both `app/build/outputs/apk/debug/app-debug.apk` and
+`app/build/outputs/apk/release/app-release-unsigned.apk` were generated.
+All **54 tests passed**, with zero failures, errors or skips. The 12 new recovery
+tests cover throwing style setters/snapshot getters, transient text writes,
+lost callbacks with stale queued state, missed wake events, real sleep, hidden
+fold containers, replacement/reattached windows, disabled settings, minute
+cadence, Samsung text overwrites and font scale 1.30. Android lint passed.
+Both source contracts, 16 signing-helper tests, APK module packaging, version
+17/name 1.7 and the debug APK v2 signature passed verification. Hosted validation
+will be recorded below when complete. Regression tests use simulated Android
+API35 and do not establish Samsung Android17 /
+OneUI9 compatibility. No physical device test of v17 has occurred. Recovery
+cannot guarantee updates in a killed/frozen SystemUI process or without Vector
+loading the module.
+
+The v17 Actions artifact is configured as `Fold8-Control-Lab-v17-UNTESTED`,
+including a checksum-pinned `sign-v17-with-phone-key.sh`. The owner reported
+successful v16 phone-key signing with the corrected OpenJDK26 helper; the
+private key remains exclusively on the phone. The same approach is retained
+for v17 and cloud compilation does not provide that original signature.
+
+## Historical v16 evidence
+
+The sections below record v16 results and are not evidence of a v17 build.
 
 ## Correct baseline
 

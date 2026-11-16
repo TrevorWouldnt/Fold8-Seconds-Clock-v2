@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="16"
-    android:versionName="1.6">
+    android:versionCode="17"
+    android:versionName="1.7">
     <queries><package android:name="com.android.systemui" /></queries>
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -8,7 +8,7 @@
         android:allowBackup="false"
         android:theme="@android:style/Theme.Material.NoActionBar">
         <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="Fold8 Control Lab v1.6: clock bubbles, shade seconds, and window gestures" />
+        <meta-data android:name="xposeddescription" android:value="Fold8 Control Lab v1.7: clock recovery, bubbles, shade seconds, and window gestures" />
         <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
         <meta-data android:name="xposedminversion" android:value="82" />
 

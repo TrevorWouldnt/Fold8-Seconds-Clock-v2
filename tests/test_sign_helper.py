@@ -79,10 +79,11 @@ class SignHelperTest(unittest.TestCase):
         path.write_text(contents)
         path.chmod(0o700)
 
-    def render_helper(self, apk_hash=None, jar_hash=None):
+    def render_helper(self, apk_hash=None, jar_hash=None, app_version=16):
         contents = HELPER.read_text()
         contents = contents.replace("__APK_SHA256__", apk_hash or hashlib.sha256(self.apk.read_bytes()).hexdigest())
         contents = contents.replace(SDK_SIGNER_SHA256, jar_hash or hashlib.sha256(self.jar.read_bytes()).hexdigest())
+        contents = contents.replace("__APP_VERSION__", str(app_version))
         self.helper.write_text(contents)
 
     def fake_java(self):
@@ -180,6 +181,26 @@ class SignHelperTest(unittest.TestCase):
         result = self.run_helper(extra_environment={"FOLD8_JAVA": str(alternate), "FOLD8_SIGNER_JAR": str(jar)})
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertTrue(any(str(jar) in call["args"] for call in self.calls()))
+
+    def test_v17_output_uses_its_own_name_and_keeps_existing_v16_update(self):
+        old_update = self.apps / "Fold8-Control-Lab-v16-update.apk"
+        old_update.write_bytes(b"previous v16 update to preserve")
+        self.output = self.apps / "Fold8-Control-Lab-v17-update.apk"
+        self.environment.pop("FOLD8_OUTPUT_APK", None)
+        self.render_helper(app_version=17)
+        result = self.run_helper()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(self.apk.read_bytes() + b"fixture signature\n", self.output.read_bytes())
+        self.assertEqual(b"previous v16 update to preserve", old_update.read_bytes())
+        self.assertIn("v17 update saved", result.stdout)
+
+    def test_packager_rejects_invalid_version_without_writing_output(self):
+        output = self.work / "invalid-helper.sh"
+        result = subprocess.run(["bash", str(ROOT / "tools/package-sign-helper.sh"),
+                                 str(self.apk), str(self.jar), str(output), "17;invalid"],
+                                text=True, capture_output=True, timeout=15)
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(output.exists())
 
     def test_existing_update_is_not_overwritten(self):
         self.output.write_bytes(b"existing update to keep")

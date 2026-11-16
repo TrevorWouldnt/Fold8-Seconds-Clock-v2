@@ -2,7 +2,7 @@ name: Build research APK
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'codex/control-lab-v16']
+    branches: [main, 'codex/control-lab-v17']
   pull_request:
     branches: [main]
 jobs:
@@ -43,25 +43,26 @@ jobs:
         run: |
           python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | grep -F "package: name='com.fold8.secondsclock' versionCode='17'"
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/Fold8-Control-Lab-v16.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk dist/Fold8-Control-Lab-v16-unsigned.apk
-          bash tools/package-sign-helper.sh dist/Fold8-Control-Lab-v16.apk \
-            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/sign-v16-with-phone-key.sh
-          python3 tests/test_sign_helper_real.py dist/Fold8-Control-Lab-v16.apk \
-            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" "$JAVA_HOME"
+          cp app/build/outputs/apk/debug/app-debug.apk dist/Fold8-Control-Lab-v17.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk dist/Fold8-Control-Lab-v17-unsigned.apk
+          bash tools/package-sign-helper.sh dist/Fold8-Control-Lab-v17.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/sign-v17-with-phone-key.sh 17
+          python3 tests/test_sign_helper_real.py dist/Fold8-Control-Lab-v17.apk \
+            "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" "$JAVA_HOME" 17
           cd dist
-          sha256sum Fold8-Control-Lab-v16.apk Fold8-Control-Lab-v16-unsigned.apk > SHA256SUMS
+          sha256sum Fold8-Control-Lab-v17.apk Fold8-Control-Lab-v17-unsigned.apk > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: Fold8-Control-Lab-v16-UNTESTED
+          name: Fold8-Control-Lab-v17-UNTESTED
           if-no-files-found: error
           retention-days: 30
           path: |
-            dist/Fold8-Control-Lab-v16.apk
-            dist/Fold8-Control-Lab-v16-unsigned.apk
+            dist/Fold8-Control-Lab-v17.apk
+            dist/Fold8-Control-Lab-v17-unsigned.apk
             dist/SHA256SUMS
-            dist/sign-v16-with-phone-key.sh
+            dist/sign-v17-with-phone-key.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -454,7 +454,7 @@ public final class ControlLabActivity extends Activity {
                 ClockConfig.save(this, original);
             }).show());
 
-        TextView footer = label("CONTROL LAB v1.6  •  CONTROL CENTER  •  KEEP YOUR v1.5 BACKUP", 10, MUTED, true);
+        TextView footer = label("CONTROL LAB v1.7  •  CONTROL CENTER  •  KEEP YOUR v1.5 BACKUP", 10, MUTED, true);
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(dp(5), dp(22), dp(5), dp(8));
         main.addView(footer);
@@ -774,7 +774,7 @@ public final class ControlLabActivity extends Activity {
     private void copyClockSummary() {
         ClockConfig c=readClockConfig();
         if(c==null)return;
-        String summary="Fold8 Control Lab 1.6\n" +
+        String summary="Fold8 Control Lab 1.7\n" +
             "Clock: enabled=" + c.enabled + ", seconds=" + c.seconds +
             ", size=" + c.scale + "%, weight=" + c.weight + ", format=" + c.format +
             ", color=" + ClockConfig.printColor(c.color) + "\n" +

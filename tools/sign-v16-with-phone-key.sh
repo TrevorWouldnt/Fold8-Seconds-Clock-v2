@@ -4,9 +4,10 @@ set -euo pipefail
 fail() { printf 'STOP: %s\n' "$*" >&2; exit 1; }
 clock_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 clock_prefix="${PREFIX:-/data/data/com.termux/files/usr}"
-clock_input_apk="${1:-$HOME/storage/downloads/apps/Fold8-Control-Lab-v16.apk}"
+clock_version='__APP_VERSION__'
+clock_input_apk="${1:-$HOME/storage/downloads/apps/Fold8-Control-Lab-v${clock_version}.apk}"
 if [ "$#" -eq 0 ] && [ ! -f "$clock_input_apk" ]; then
-    clock_input_apk="$HOME/storage/downloads/Fold8-Control-Lab-v16.apk"
+    clock_input_apk="$HOME/storage/downloads/Fold8-Control-Lab-v${clock_version}.apk"
 fi
 clock_key="${FOLD8_KEYSTORE:-$HOME/fold8-seconds-clock/private-signing-key.jks}"
 clock_expected_input='__APK_SHA256__'
@@ -17,7 +18,7 @@ for tool in sha256sum sed tail base64 mktemp cp; do
 done
 [ -f "$clock_input_apk" ] || fail 'APK not found. Pass its exact path as the first argument.'
 clock_input_dir="$(cd -- "$(dirname -- "$clock_input_apk")" && pwd)"
-clock_output_apk="${FOLD8_OUTPUT_APK:-$clock_input_dir/Fold8-Control-Lab-v16-update.apk}"
+clock_output_apk="${FOLD8_OUTPUT_APK:-$clock_input_dir/Fold8-Control-Lab-v${clock_version}-update.apk}"
 [ ! -e "$clock_output_apk" ] || fail 'An update APK already exists there. Move it aside before retrying.'
 [[ "$clock_expected_input" =~ ^[0-9a-f]{64}$ ]] || fail 'Download the packaged, checksum-pinned helper.'
 clock_actual_input="$(sha256sum "$clock_input_apk")"
@@ -79,23 +80,23 @@ if clock_signer verify "$clock_input_apk" > "$clock_sign_dir/signer.log" 2>&1; t
     clock_verify_status=$?
     tail -n 12 "$clock_sign_dir/signer.log" >&2
     if [ "$clock_verify_status" -ge 128 ]; then
-        fail 'Signer crashed before completing verification. Keep v15 installed; the key was not touched.'
+        fail 'Signer crashed before completing verification. Keep your current installation; the key was not touched.'
     fi
     fail 'Signer could not verify this APK. See the error above; no signing was attempted.'
 fi
-[ -f "$clock_key" ] || fail 'Original phone signing key not found. Keep v15 installed; no key was changed.'
+[ -f "$clock_key" ] || fail 'Original phone signing key not found. Keep your current installation; no key was changed.'
 if ! clock_signer sign --ks "$clock_key" --ks-key-alias fold8clock \
         --ks-pass pass:android --key-pass pass:android \
         --out "$clock_sign_dir/signed.apk" "$clock_input_apk" > "$clock_sign_dir/signer.log" 2>&1; then
     tail -n 12 "$clock_sign_dir/signer.log" >&2
-    fail 'Signing failed. The existing key and v15 installation were not changed.'
+    fail 'Signing failed. The existing key and installed app were not changed.'
 fi
 if ! clock_signer verify --print-certs "$clock_sign_dir/signed.apk" > "$clock_sign_dir/signer.log" 2>&1; then
     tail -n 12 "$clock_sign_dir/signer.log" >&2
     fail 'Signed update verification did not complete. No update was saved.'
 fi
 clock_actual_cert="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$clock_sign_dir/signer.log")"
-[ "$clock_actual_cert" = "$clock_expected_cert" ] || fail 'Certificate does not match the supplied v15 APK. No update was saved.'
+[ "$clock_actual_cert" = "$clock_expected_cert" ] || fail 'Certificate does not match the original phone signing key. No update was saved.'
 cp -- "$clock_sign_dir/signed.apk" "$clock_output_apk"
-printf 'Verified v15-compatible update saved: %s\nNothing was installed or restarted.\n' "$clock_output_apk"
+printf 'Verified original-key-compatible v%s update saved: %s\nNothing was installed or restarted.\n' "$clock_version" "$clock_output_apk"
 exit 0
