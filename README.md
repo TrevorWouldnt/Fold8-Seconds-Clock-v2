@@ -15,6 +15,15 @@ Read the signing instructions below before updating an existing v15/v16 installa
 from the [successful build](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43973097163).
 The source is available in [PR #3](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/3).
 
+The owner subsequently reported that seconds were still absent from the status
+clock after updating and rebooting. The build is not device-verified. The
+[read-only Termux collector](tools/collect-clock-diagnostics.sh) gathers installed
+version/Xposed entry, clock settings, SystemUI mappings and filtered Vector logs
+into `Downloads/Fold8-Diagnostics`. Grant the existing Termux root request when
+prompted and attach its text report. It changes no clock settings, module scope
+or system files and performs no restart. Missing logs alone are inconclusive;
+scope reads are included only when an existing SQLite CLI is available.
+
 ## Changes
 
 - Time writes are isolated from optional styling failures so a broken visual

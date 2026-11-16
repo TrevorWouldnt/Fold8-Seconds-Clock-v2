@@ -2,8 +2,9 @@
 
 ## Current v17 status
 
-The owner reported that seconds stopped after the previous revision. The exact
-on-phone failure has not been identified from a runtime log. v17 addresses
+The owner reported that seconds stopped after the previous revision, then
+reported that v17 still showed no status-bar seconds after updating and
+rebooting. No runtime log has yet identified the cause. v17 addresses
 source-level scheduling, wake/lifecycle and styling-failure risks while
 preserving the full v15 Control Lab application and its settings.
 
@@ -24,7 +25,8 @@ Both source contracts, 16 signing-helper tests, APK module packaging, version
 17/name 1.7 and the debug APK v2 signature passed verification. Hosted validation
 also passed as recorded below. Regression tests use simulated Android
 API35 and do not establish Samsung Android17 /
-OneUI9 compatibility. No physical device test of v17 has occurred. Recovery
+OneUI9 compatibility. The owner's v17 test did not show seconds; no Cloud-side
+physical device or native Vector-hook test has occurred. Recovery
 cannot guarantee updates in a killed/frozen SystemUI process or without Vector
 loading the module.
 
@@ -54,7 +56,11 @@ exact APK hash, version 17 and the owner's original certificate. It still
 requires the phone-local private key to create a data-preserving update.
 [PR #3](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/3) contains
 the v17 source. Later documentation-only changes do not change the linked
-run's APK. No physical device or native Vector-hook validation occurred.
+run's APK. The owner reported no visible status seconds after updating and
+rebooting. A read-only Termux diagnostic collector was added separately to
+identify the installed version, persisted configuration and framework loading;
+that script does not change the APK. No Cloud-side physical device or native
+Vector-hook validation occurred.
 
 ## Historical v16 evidence
 
