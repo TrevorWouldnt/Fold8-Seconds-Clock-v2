@@ -11,10 +11,10 @@ ns='{http://schemas.android.com/apk/res/android}'
 gradle=(root/'app/build.gradle').read_text()
 assert "namespace 'com.fold8.secondsclock'" in gradle
 assert "applicationId 'com.fold8.secondsclock'" in gradle
-assert manifest.attrib[ns+'versionCode']=='17'
-assert manifest.attrib[ns+'versionName']=='1.7'
-assert "versionCode 17" in gradle
-assert "versionName '1.7'" in gradle
+assert manifest.attrib[ns+'versionCode']=='18'
+assert manifest.attrib[ns+'versionName']=='1.8'
+assert "versionCode 18" in gradle
+assert "versionName '1.8'" in gradle
 assert any(x.attrib.get(ns+'name')=='android.permission.ACCESS_NETWORK_STATE' for x in manifest.findall('uses-permission'))
 assert not any(x.attrib.get(ns+'name')=='android.permission.INTERNET' for x in manifest.findall('uses-permission'))
 activities=manifest.find('application').findall('activity')
@@ -45,6 +45,6 @@ assert len(items)>=50,len(items)
 assert not (app/'AndroidManifest.xml').read_text().count('<uses-permission')>1
 assert all(x in ui for x in ['shadeSeconds','doubleTapShade','gestureHaptic','showAmPm'])
 assert all(x in json for x in ['shadeSeconds','doubleTapShade','gestureHaptic','showAmPm'])
-print('PASS: v17 preserves v15 Control Center, existing diagnostic controls, safe manifest and extended backups; Android/runtime behavior is verified separately.')
+print('PASS: v18 preserves v15 Control Center, existing diagnostic controls, safe manifest and extended backups; Android/runtime behavior is verified separately.')
 print('Action buttons:',hub.count('button(')-1,'new switches:',hub.count('toggle(')-1,
       'numeric controls:',hub.count('inputNumber(')-1,'readings:',diag.count('add(out,'),'catalog entries:',len(items))

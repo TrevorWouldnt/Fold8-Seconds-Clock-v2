@@ -30,8 +30,32 @@ limited() {
     if command -v timeout >/dev/null 2>&1; then timeout 12 "$@"; else "$@"; fi
 }
 module_lines() {
-    grep -Ei 'Fold8ControlLab|com[./]fold8[./]secondsclock|Fold8 Control Lab' |
-        tail -n 100
+    # Keep Java causes/frames beside a matching module record, rather than
+    # dumping arbitrary neighbouring log messages from other applications.
+    awk '
+        function trace(line) {
+            if (tolower(line) !~ /vector|lsposed|lspd|xposed/ &&
+                    line !~ /^[[:space:]]*(Caused by:|Suppressed:|at[[:space:]]|[[:alnum:]_.$]+(Exception|Error)|\.\.\.)/)
+                return 0
+            return line ~ /(^|[[:space:]:])(Caused by:|Suppressed:|at[[:space:]]+[[:alnum:]_.$<>]+\(|[[:alnum:]_.$]+(Exception|Error)(:|[[:space:]]|$)|\.\.\.[[:space:]]+[0-9]+[[:space:]]+more)/
+        }
+        function emit(number, line) {
+            if (number > emitted) { print line; emitted = number }
+        }
+        {
+            if (tolower($0) ~ /fold8controllab|com[.\/]fold8[.\/]secondsclock|fold8 control lab/) {
+                first = NR - 1
+                while (first > 0 && first >= NR - 8 && trace(previous[first % 8])) first--
+                for (i = first + 1; i < NR; i++) emit(i, previous[i % 8])
+                emit(NR, $0)
+                remaining = 12
+            } else if (remaining > 0) {
+                if (trace($0)) emit(NR, $0); else remaining = 0
+                remaining--
+            }
+            previous[NR % 8] = $0
+        }
+    ' | tail -n 160
 }
 
 section 'Fold8 clock diagnostics v1; read-only'
@@ -50,7 +74,7 @@ fold8_user="$(limited cmd activity get-current-user 2>/dev/null)"
 case "$fold8_user" in ''|*[!0-9]*) fold8_user=0;; esac
 printf 'Active Android user: %s\n' "$fold8_user"
 
-section 'Installed Control Lab package (expected versionCode=17, versionName=1.7)'
+section 'Installed Control Lab package (expected versionCode=18, versionName=1.8)'
 limited dumpsys package com.fold8.secondsclock 2>&1 |
     grep -E 'Unable|not found|codePath=|resourcePath=|versionCode=|versionName=|firstInstallTime=|lastUpdateTime=|userId=|User [0-9]+:'
 fold8_package_paths="$(limited cmd package path --user "$fold8_user" com.fold8.secondsclock 2>&1)"
@@ -86,7 +110,7 @@ for fold8_area in user_de user; do
         ls -l "$fold8_pref"
         grep -E '<(boolean|int|long|float)[[:space:]]' "$fold8_pref" || true
     else
-        printf 'Not present/readable. Device-protected user_de is the expected v17 location.\n'
+        printf 'Not present/readable. Device-protected user_de is the expected location.\n'
     fi
 done
 

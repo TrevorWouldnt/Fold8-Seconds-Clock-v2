@@ -1,4 +1,4 @@
-# Fold8 Control Lab v1.7 · Existing v1.5 capabilities and additions
+# Fold8 Control Lab v1.8 · Existing v1.5 capabilities and additions
 
 This catalog describes real source-level implementations, not a speculative roadmap. They require an Android build and a device test before being treated as proven on the Fold8. Several tools are *read-only readings*, not System UI modifications. Numbers are provided so work can be audited, not to inflate the scope with empty toggles.
 
@@ -130,6 +130,11 @@ This catalog describes real source-level implementations, not a speculative road
 109. Renew window observers after clock reattachment and recover missed wake notifications from positive device-state evidence.
 110. Respect deliberately disabled seconds while recovering clock updates; retain minute cadence when seconds are disabled.
 
+## v1.8 hook startup
+
+111. Defer the Android main-handler creation while Vector loads the Xposed entry class, addressing the static initialization site in the owner's v17 failure report.
+112. Prepare a phone-key-signed update from the downloaded ZIP in Downloads/archives without extracting it into Downloads; save a new verified APK in Downloads/apps for manual installation.
+
 **Safety scope:** The original v15 source and core hashes were verified before import. The current hook, provider and configuration are intentionally updated for requested fixes; original pins remain in `tests/v15-baseline.sha256`, and reviewed new pins are separate. Existing styling algorithms and appearance/diagnostic preference implementations were preserved. Nothing automatically installs, restarts SystemUI, modifies the kernel or edits system files. Existing root toolbox actions and the explicitly confirmed restart action require direct user taps. Backup deletion, preset overwrites, and restoration/import confirmation remain intact.
 
-**Limits:** Depending on Samsung firmware, current/charge-counter readings or certain log files may be unavailable. The dashboard says so; it doesn't pretend unavailable readings are zero. The power estimate is battery-side, not a measurement of charger wattage. Recovery cannot guarantee updates while SystemUI is frozen/killed or Vector has not loaded the hook. Current revision builds, 54 Android tests and lint passed locally and in GitHub Actions; real device compatibility/performance validation is pending.
+**Limits:** Depending on Samsung firmware, current/charge-counter readings or certain log files may be unavailable. The dashboard says so; it doesn't pretend unavailable readings are zero. The power estimate is battery-side, not a measurement of charger wattage. Recovery cannot guarantee updates while SystemUI is frozen/killed or Vector has not loaded the hook. v17 passed 54 simulated Android tests and builds but failed to load its hook on the phone; the filtered report locates the eager static main-handler initialization without showing the exception type. v18 passed 55 local Android tests, lint and builds plus 27 Python signing/preparation tests; hosted and real device compatibility/performance validation are pending.

@@ -2,7 +2,6 @@ package com.fold8.secondsclock;
 
 import android.graphics.Rect;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.SystemClock;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
@@ -31,7 +30,6 @@ import de.robv.android.xposed.XposedBridge;
 final class ClockGestures {
     interface ToggleCallback { void onToggle(TextView clock, boolean shade); }
 
-    private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final Map<TextView, Target> TARGETS = new WeakHashMap<>();
     private static final Map<View, Window> WINDOWS = new WeakHashMap<>();
     private static final Set<Method> DISPATCH_HOOKS = new HashSet<>();
@@ -46,13 +44,13 @@ final class ClockGestures {
     private ClockGestures() { }
 
     static void initialize(ToggleCallback value) {
-        if (!onMain()) { MAIN.post(() -> initialize(value)); return; }
+        if (!onMain()) { MainThread.post(null, () -> initialize(value)); return; }
         callback = value;
     }
 
     static void updateConfig(ClockConfig value) {
         if (value == null) return;
-        if (!onMain()) { MAIN.post(() -> updateConfig(value)); return; }
+        if (!onMain()) { MainThread.post(null, () -> updateConfig(value)); return; }
         boolean changed = config.enabled != value.enabled
                 || config.doubleTapBubble != value.doubleTapBubble
                 || config.doubleTapShade != value.doubleTapShade;
@@ -63,7 +61,7 @@ final class ClockGestures {
     static void watch(TextView clock, boolean shade) {
         if (!onMain()) {
             WeakReference<TextView> reference = new WeakReference<>(clock);
-            MAIN.post(() -> { TextView view = reference.get(); if (view != null) watch(view, shade); });
+            MainThread.post(clock, () -> { TextView view = reference.get(); if (view != null) watch(view, shade); });
             return;
         }
         Target target = TARGETS.get(clock);
@@ -78,7 +76,7 @@ final class ClockGestures {
     static void forget(TextView clock) {
         if (!onMain()) {
             WeakReference<TextView> reference = new WeakReference<>(clock);
-            MAIN.post(() -> { TextView view = reference.get(); if (view != null) forget(view); });
+            MainThread.post(clock, () -> { TextView view = reference.get(); if (view != null) forget(view); });
             return;
         }
         Target target = TARGETS.remove(clock);
@@ -197,7 +195,7 @@ final class ClockGestures {
                     long time = SystemClock.uptimeMillis();
                     window.taps.isPending(target, time); // Also expires abandoned taps.
                     if (window.taps.isSecondTapInProgress(target) && time < deadline) {
-                        MAIN.postDelayed(this, Math.min(50, deadline - time));
+                        MainThread.requireHandler().postDelayed(this, Math.min(50, deadline - time));
                         return;
                     }
                     target.pendingClick = null;
@@ -209,7 +207,7 @@ final class ClockGestures {
                     finally { replayingClick = false; }
                 }
             };
-            MAIN.postDelayed(target.pendingClick, ViewConfiguration.getDoubleTapTimeout());
+            MainThread.requireHandler().postDelayed(target.pendingClick, ViewConfiguration.getDoubleTapTimeout());
         }
         return true;
     }
@@ -265,7 +263,8 @@ final class ClockGestures {
     }
 
     private static void cancelPendingClick(Target target) {
-        if (target.pendingClick != null) MAIN.removeCallbacks(target.pendingClick);
+        Handler handler = MainThread.handler();
+        if (target.pendingClick != null && handler != null) handler.removeCallbacks(target.pendingClick);
         target.pendingClick = null;
     }
 
@@ -289,7 +288,7 @@ final class ClockGestures {
         nativeHooksEnabled = false; // A Robolectric test must not invoke Vector's native hook engine.
     }
 
-    private static boolean onMain() { return Looper.myLooper() == Looper.getMainLooper(); }
+    private static boolean onMain() { return MainThread.isMainThread(); }
     private static void log(String message) { XposedBridge.log("[Fold8ControlLab] " + message); }
 
     private static final class Target implements View.OnAttachStateChangeListener {

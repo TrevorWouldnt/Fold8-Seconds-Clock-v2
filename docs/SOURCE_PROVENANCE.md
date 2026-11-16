@@ -35,5 +35,13 @@ preserved verbatim as V15_README.md and V15_FEATURES.md.
 
 The v17 revision continues from the complete v16 Control Lab branch after the
 owner reported that seconds stopped. This is not a replacement with the smaller
-v0.3 app. The report alone does not identify the exact on-device cause, and the
-new recovery paths remain unverified on the owner's phone until tested.
+v0.3 app. The owner's later diagnostic report confirms v17/1.7 installed with
+seconds enabled in the live provider, but Vector failed to load `SecondsHook`
+at static main-handler initialization, before any clock hooks ran. The filtered
+report does not include the underlying exception type. v18 continues from v17
+and defers that initialization. All 55 local Android tests, lint and builds
+passed, including a real class-loading regression that reproduces the old
+failure with the main looper absent. That negative control does not identify
+the phone's underlying exception. Hosted and device validation are pending.
+No raw diagnostic report is committed, and no on-phone success is claimed for
+the new revision.

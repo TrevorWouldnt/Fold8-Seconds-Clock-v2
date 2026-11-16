@@ -61,7 +61,9 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     private static final Map<Object, Boolean> MANAGERS = new WeakHashMap<>();
     private static final Map<TextView, OriginalStyle> ORIGINALS = new HashMap<>();
     private static final Map<TextView, ClockState> STATES = new HashMap<>();
-    private static final Handler MAIN = Handler.createAsync(Looper.getMainLooper());
+    // Vector loads this entry before Android necessarily has a main Looper.
+    // Handlers are acquired only from callbacks after the UI is ready.
+    private static Handler main() { return MainThread.requireHandler(); }
     private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "Fold8-ControlLab-Settings"); thread.setDaemon(true); return thread;
     });
@@ -96,6 +98,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     private static int loggedCorrections;
     private static boolean gestureFailureLogged;
     private static boolean bubbleFailureLogged;
+    private static boolean dispatchFailureLogged;
 
     private static final class ClockState {
         final ClockText formatter = new ClockText();
@@ -131,7 +134,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
 
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lp) {
         if (!SYSUI.equals(lp.packageName)) return;
-        XposedBridge.log(TAG + "v17 package callback: " + lp.processName);
+        XposedBridge.log(TAG + "v18 package callback: " + lp.processName);
         if (lp.processName != null && !SYSUI.equals(lp.processName)) return;
         for (String name : new String[]{BASE_CLASS, VIEW_CLASS,
                 "com.android.systemui.statusbar.policy.QSClockHeaderView",
@@ -142,7 +145,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                     @Override protected void afterHookedMethod(MethodHookParam param) {
                         if (!(param.thisObject instanceof TextView)) return;
                         WeakReference<TextView> ref = new WeakReference<>((TextView)param.thisObject);
-                        MAIN.post(() -> {
+                        postClock((TextView)param.thisObject, () -> {
                             TextView view = ref.get();
                             if (view == null) return;
                             Boolean shade = kind(view.getClass());
@@ -166,10 +169,13 @@ public final class SecondsHook implements IXposedHookLoadPackage {
             XC_MethodHook hook = new XC_MethodHook() {
                 @Override protected void afterHookedMethod(MethodHookParam param) {
                     WeakReference<Object> ref = new WeakReference<>(param.thisObject);
-                    MAIN.post(() -> {
-                        Object owner = ref.get();
-                        if (owner != null) { MANAGERS.put(owner, true); discoverManager(owner); }
-                    });
+                    TextView anchor = managerClock(param.thisObject);
+                    try {
+                        MainThread.post(anchor, () -> {
+                            Object owner = ref.get();
+                            if (owner != null) { MANAGERS.put(owner, true); discoverManager(owner); }
+                        });
+                    } catch (Throwable error) { reportDispatchFailure(error); }
                 }
             };
             XposedBridge.hookAllConstructors(manager, hook);
@@ -178,12 +184,29 @@ public final class SecondsHook implements IXposedHookLoadPackage {
         } catch (Throwable error) { XposedBridge.log(TAG + "optional manager hook unavailable: " + error); }
     }
 
-    private static void discoverManager(Object owner) {
+    private static void postClock(TextView clock, Runnable task) {
+        try { MainThread.post(clock, task); }
+        catch (Throwable error) { reportDispatchFailure(error); }
+    }
+
+    private static void reportDispatchFailure(Throwable error) {
+        if (!dispatchFailureLogged) {
+            dispatchFailureLogged = true;
+            XposedBridge.log(TAG + "clock dispatch will retry on attachment: " + error);
+            XposedBridge.log(error);
+        }
+    }
+
+    private static TextView managerClock(Object owner) {
         try {
             Object view = XposedHelpers.getObjectField(owner, "mClockView");
-            if (view instanceof TextView && Boolean.FALSE.equals(kind(view.getClass())))
-                register((TextView)view, false);
-        } catch (Throwable ignored) { /* Optional OEM fallback; direct clock hooks remain active. */ }
+            return view instanceof TextView && Boolean.FALSE.equals(kind(view.getClass())) ? (TextView)view : null;
+        } catch (Throwable ignored) { return null; }
+    }
+
+    private static void discoverManager(Object owner) {
+        TextView clock = managerClock(owner);
+        if (clock != null) register(clock, false);
     }
 
     private static Boolean kind(Class<?> type) {
@@ -236,7 +259,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
             try { clock.setBackground(saved.oldBackground); } catch (Throwable ignored) { }
             try { clock.setPadding(saved.left,saved.top,saved.right,saved.bottom); } catch (Throwable ignored) { }
         }
-        if (ACTIVE.isEmpty()) { MAIN.removeCallbacks(TICK); queued = false; nextTickDue = 0; }
+        if (ACTIVE.isEmpty()) { main().removeCallbacks(TICK); queued = false; nextTickDue = 0; }
     }
 
     private static void bindRoot(View root) {
@@ -270,7 +293,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
         }));
         try {
             appContext.getContentResolver().registerContentObserver(ClockConfig.CONTENT_URI, false,
-                    new ContentObserver(MAIN) { @Override public void onChange(boolean self) { requestConfig(); } });
+                    new ContentObserver(main()) { @Override public void onChange(boolean self) { requestConfig(); } });
         } catch (Throwable error) { XposedBridge.log(TAG + "settings observer unavailable: " + error); }
         IntentFilter filter = new IntentFilter();
         for (String action : new String[]{Intent.ACTION_SCREEN_OFF, Intent.ACTION_SCREEN_ON,
@@ -282,11 +305,11 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                     String action = intent.getAction();
                     if (Intent.ACTION_SCREEN_OFF.equals(action)) asleep = true;
                     else if (Intent.ACTION_SCREEN_ON.equals(action) || Intent.ACTION_USER_PRESENT.equals(action)) asleep = false;
-                    if (asleep) { MAIN.removeCallbacks(TICK); queued = false; nextTickDue = 0; }
+                    if (asleep) { main().removeCallbacks(TICK); queued = false; nextTickDue = 0; }
                     else { recover(); tick(); }
                 } catch (Throwable error) { reportRecovery("screen event retry: " + error); }
                 finally {
-                    MAIN.removeCallbacks(WATCHDOG); watchdogQueued = false;
+                    main().removeCallbacks(WATCHDOG); watchdogQueued = false;
                     armWatchdog();
                 }
             }
@@ -299,9 +322,9 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     }
 
     private static void requestConfig() {
-        if (Looper.myLooper() != Looper.getMainLooper()) { MAIN.post(SecondsHook::requestConfig); return; }
+        if (Looper.myLooper() != Looper.getMainLooper()) { main().post(SecondsHook::requestConfig); return; }
         if (reading) { readDirty = true; return; }
-        MAIN.removeCallbacks(CONFIG_RETRY);
+        main().removeCallbacks(CONFIG_RETRY);
         reading = true; readDirty = false;
         IO.execute(() -> {
             ClockConfig fresh = null;
@@ -310,7 +333,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                 if (!reportedConfigError) { reportedConfigError = true; XposedBridge.log(TAG + "settings unavailable: " + error); }
             }
             ClockConfig result = fresh;
-            MAIN.post(() -> {
+            main().post(() -> {
                 reading = false;
                 if (!readDirty && result != null) {
                     config = result; ClockGestures.updateConfig(result);
@@ -321,7 +344,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                 if (readDirty) requestConfig();
                 else if (result == null) {
                     nextConfigCheck = SystemClock.uptimeMillis() + configRetry;
-                    MAIN.postDelayed(CONFIG_RETRY, configRetry);
+                    main().postDelayed(CONFIG_RETRY, configRetry);
                     configRetry = Math.min(60000L, configRetry * 2);
                 }
             });
@@ -329,17 +352,17 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     }
 
     private static void schedule(long interval) {
-        if (queued) MAIN.removeCallbacks(TICK);
+        if (queued) main().removeCallbacks(TICK);
         queued = !asleep && !ACTIVE.isEmpty() && interval > 0;
         nextTickDue = 0;
         if (queued) {
             long delay = interval - Math.floorMod(wallTime.getAsLong(), interval);
             nextTickDue = SystemClock.uptimeMillis() + delay;
-            queued = MAIN.postDelayed(TICK, delay);
+            queued = main().postDelayed(TICK, delay);
         }
     }
     private static void tick() {
-        if (queued) MAIN.removeCallbacks(TICK);
+        if (queued) main().removeCallbacks(TICK);
         queued = false;
         boolean seconds = false, visible = false;
         try {
@@ -363,7 +386,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
 
     private static void armWatchdog() {
         if (!watchdogQueued && (initialized || !KINDS.isEmpty()))
-            watchdogQueued = MAIN.postDelayed(WATCHDOG, asleep ? 30000L : 5000L);
+            watchdogQueued = main().postDelayed(WATCHDOG, asleep ? 30000L : 5000L);
     }
 
     private static boolean recoverWake() {
@@ -440,7 +463,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     }
 
     private static void reportRecovery(String reason) {
-        if (recoveryLogs++ < 20) XposedBridge.log(TAG + "v17 " + reason + "; active=" + ACTIVE.size());
+        if (recoveryLogs++ < 20) XposedBridge.log(TAG + "v18 " + reason + "; active=" + ACTIVE.size());
     }
 
     private static boolean visible(TextView view) {
@@ -469,7 +492,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
             } catch (Throwable error) { reportRecovery("visibility retry: " + error); }
         }
         if (changed) {
-            MAIN.removeCallbacks(TICK); queued = true; nextTickDue = now; MAIN.post(TICK);
+            main().removeCallbacks(TICK); queued = true; nextTickDue = now; main().post(TICK);
         }
     }
 
@@ -503,7 +526,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
                 state.textRetryAfter = 0;
                 if (!loggedFirstPaint) {
                     loggedFirstPaint = true;
-                    XposedBridge.log(TAG + "first v17 clock paint; seconds=" + seconds + "; shade=" + shade);
+                    XposedBridge.log(TAG + "first v18 clock paint; seconds=" + seconds + "; shade=" + shade);
                 }
             }
         } catch (Throwable error) {
@@ -533,7 +556,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
     static void setConfigForTests(ClockConfig value) { testing = true; config = value; ClockGestures.updateConfig(value); }
     static void setWallTimeForTests(LongSupplier value) { wallTime = value; }
     static void cancelTickForTests() {
-        MAIN.removeCallbacks(TICK);
+        main().removeCallbacks(TICK);
         // Model a lost callback with stale bookkeeping, not a clean intentional pause.
         queued = true; nextTickDue = SystemClock.uptimeMillis() - 2000L;
     }
@@ -551,7 +574,7 @@ public final class SecondsHook implements IXposedHookLoadPackage {
         }
         ROOTS.clear(); VISIBILITY.clear();
         KINDS.clear(); ORIGINALS.clear(); STATES.clear(); MANAGERS.clear();
-        MAIN.removeCallbacks(TICK); MAIN.removeCallbacks(WATCHDOG); MAIN.removeCallbacks(CONFIG_RETRY);
+        main().removeCallbacks(TICK); main().removeCallbacks(WATCHDOG); main().removeCallbacks(CONFIG_RETRY);
         queued = false; watchdogQueued = false; asleep = false;
         nextTickDue = nextVisibilityCheck = nextDiscovery = nextConfigCheck = 0; recoveryLogs = 0;
         config = ClockConfig.safeFallback(); wallTime = System::currentTimeMillis; testing = true;

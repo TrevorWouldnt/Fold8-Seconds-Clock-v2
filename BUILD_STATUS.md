@@ -1,10 +1,62 @@
-# Fold8 Control Lab v1.7 validation
+# Fold8 Control Lab v1.8 validation
 
-## Current v17 status
+## Current v18 status
+
+The owner's read-only diagnostic report confirms installed version 17/name 1.7
+and live provider values `enabled=1`, `seconds=1`, `shadeSeconds=1`. Vector
+reported failure to load `SecondsHook` at `<clinit>` line 64, the eager static
+`Handler.createAsync(Looper.getMainLooper())` initialization in that source.
+The failure occurred before the clock hooks ran. The filtered report does not
+include the underlying exception type, so it does not establish the more
+specific reason handler creation failed.
+
+v18 defers main-handler initialization during Xposed entry loading while
+preserving v17's recovery work, all Control Lab screens and the original
+phone-local signing workflow. Local v18 validation **passed**. Exact command:
+
+```sh
+python /workspace/toolchains/run-gradle.py :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+```
+
+The full run completed with `BUILD SUCCESSFUL` in 26 seconds. All **55 tests
+passed**, with zero failures, errors or skips; lint and debug/release assembly
+also passed. Both v18 source contracts passed. Generated APK paths are
+`app/build/outputs/apk/debug/app-debug.apk` and
+`app/build/outputs/apk/release/app-release-unsigned.apk`. APK verification
+confirmed version 18/name 1.8, a valid v2 signature, the Xposed entry and 181
+class definitions with no bundled Xposed API stubs.
+
+The new `HookStartupTest` uses a fresh child class loader, clears the actual
+Android main looper with `Looper.clearMainLooperForTest`, invokes the real
+entry and gesture setup, restores the looper and verifies clock advancement
+from seconds 5 to 6. A negative control temporarily restored the exact old
+eager handler field: the test then failed in `SecondsHook.<clinit>` with a
+null-looper `NullPointerException`. The fixed source was restored byte for byte
+and the full 55-test suite passed again. This reproduces a known vulnerable
+startup condition; it does **not** establish that the phone's exception was
+the same type, which the filtered report did not include.
+
+All **27** Python signing/preparation regression tests passed. The SDK35 real
+signer-JAR test passed for v18, rejecting a wrong certificate and validating a
+separate disposable test-certificate fixture. No phone private key was
+available in Cloud or modified. Archive preparation reads the downloaded ZIP
+from `Downloads/archives` without extracting it into Downloads, then writes a
+new verified update into `Downloads/apps` for manual installation.
+
+Hosted v18 validation is **pending**. The workflow is configured to verify
+version 18 and produce `Fold8-Control-Lab-v18-UNTESTED` with APKs, checksums and
+`sign-v18-with-phone-key.sh`; artifact links will be recorded after that run.
+No physical-device test
+of v18 has occurred; fixing the reported initialization site is not evidence
+that seconds display works on the phone. Recovery cannot guarantee updates if
+SystemUI is killed/frozen or Vector has not loaded the module.
+
+## Historical v17 validation
 
 The owner reported that seconds stopped after the previous revision, then
 reported that v17 still showed no status-bar seconds after updating and
-rebooting. No runtime log has yet identified the cause. v17 addresses
+rebooting. The later diagnostic report identified a hook-load failure during
+static main-handler initialization, as described above. v17 addresses
 source-level scheduling, wake/lifecycle and styling-failure risks while
 preserving the full v15 Control Lab application and its settings.
 

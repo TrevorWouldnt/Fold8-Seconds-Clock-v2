@@ -1,3 +1,18 @@
+# v1.8 · Xposed entry initialization
+
+- Address the v17 diagnostic finding: installed settings enabled seconds, but
+  Vector failed to load `SecondsHook` at eager static main-handler creation
+  before clock hooks ran. The filtered report did not identify the exception type.
+- Defer main-handler creation during module startup, preserving existing clock
+  recovery, full Control Lab features and phone-local update signing.
+- Add a real entry-class startup regression with the main looper absent; the
+  old eager handler fails its negative control and the fixed implementation
+  resumes clock updates after looper restoration.
+- Pass all 55 local Android tests, lint, debug/release builds and 27 Python
+  signing/preparation checks. Hosted and on-phone validation are pending.
+- Prepare signed updates directly from ZIPs in Downloads/archives, saving a new
+  verified APK in Downloads/apps for manual installation.
+
 # v1.7 · Clock update recovery
 
 - Isolate time writes from optional styling failures and bound retry work.
@@ -6,7 +21,8 @@
 - Preserve intentional seconds settings, minute-only cadence, all v15 Control Lab
   screens and the original phone-key signing workflow.
 - Add failure/lifecycle regression coverage; all 54 Android tests, lint and
-  debug/release builds passed locally and in GitHub Actions. Device validation is pending.
+  debug/release builds passed locally and in GitHub Actions. The owner's later
+  phone report showed no seconds and a Vector hook-load failure.
 
 # v1.6 · Window gestures and shade clock
 
