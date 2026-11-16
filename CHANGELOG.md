@@ -8,8 +8,8 @@
 - Add a real entry-class startup regression with the main looper absent; the
   old eager handler fails its negative control and the fixed implementation
   resumes clock updates after looper restoration.
-- Pass all 55 local Android tests, lint, debug/release builds and 27 Python
-  signing/preparation checks. Hosted and on-phone validation are pending.
+- Pass all 55 Android tests, lint, debug/release builds and 27 Python
+  signing/preparation checks locally and in both GitHub Actions runs. On-phone validation is pending.
 - Prepare signed updates directly from ZIPs in Downloads/archives, saving a new
   verified APK in Downloads/apps for manual installation.
 

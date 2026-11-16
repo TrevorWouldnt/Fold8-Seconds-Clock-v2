@@ -11,10 +11,14 @@ Vector reported that `SecondsHook` failed to load at static initialization,
 at the eager main-handler creation in `SecondsHook.<clinit>` line 64. This
 happened before clock hooks could run; the filtered report does not include the
 underlying exception type. v1.8 defers handler initialization instead of creating
-it while Vector loads the entry class. Local validation passed all 55 tests,
-lint and both APK builds; hosted validation and phone testing are pending.
+it while Vector loads the entry class. All 55 tests, lint and both APK builds
+passed locally and in GitHub Actions; phone testing is pending.
 See [BUILD_STATUS.md](BUILD_STATUS.md) for evidence.
 Read the signing instructions below before updating an existing installation.
+
+[Download the v18 APK and signing helper ZIP](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43982331860/artifacts/14283353123)
+from the [successful build](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43982331860).
+The source is available in [PR #4](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/4).
 
 The [read-only Termux collector](tools/collect-clock-diagnostics.sh) gathers installed
 version/Xposed entry, clock settings, SystemUI mappings and filtered Vector logs
@@ -29,7 +33,7 @@ scope reads are included only when an existing SQLite CLI is available.
   class does not eagerly access Android's main looper.
 - Retain v17's bounded ticker recovery, styling isolation and full Control Lab
   screens and settings. Fixing hook startup is required before those recovery
-  paths can run; v18 still needs hosted and on-phone validation.
+  paths can run; v18 still needs on-phone validation.
 - Time writes are isolated from optional styling failures so a broken visual
   customization does not suppress the core clock update.
 - A low-frequency watchdog recovers a stopped ticker, reacquires tracked clocks,
@@ -76,12 +80,19 @@ avoiding PATH-selected `java`/`apksigner` wrappers. Java option injection is
 cleared only in the signer subprocess. No package install or APK rebuild occurs.
 
 For downloads automatically sorted into folders, keep the v18 artifact ZIP in
-`Downloads/archives`. Download the
-[prepare-update-from-archives.sh source file](tools/prepare-update-from-archives.sh)
-to Downloads, then run in Termux:
+`Downloads/archives`. Run this in Termux to fetch the
+[preparation script](tools/prepare-update-from-archives.sh) from the exact
+reviewed source commit into a temporary file, prepare the update and remove the
+temporary script:
 
 ```sh
-bash ~/storage/downloads/prepare-update-from-archives.sh 18
+(
+  set -eu
+  fold8_prepare="$(mktemp "$TMPDIR/fold8-prepare.XXXXXX")"
+  trap 'rm -f -- "$fold8_prepare"' EXIT
+  curl -fL --retry 2 'https://raw.githubusercontent.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/e927b0770ab95ee219052f9f7994540b6c82417c/tools/prepare-update-from-archives.sh' -o "$fold8_prepare"
+  bash "$fold8_prepare" 18
+)
 ```
 
 This selects the newest `Fold8-Control-Lab-v18*.zip` in `Downloads/archives`,

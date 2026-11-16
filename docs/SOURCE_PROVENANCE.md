@@ -42,6 +42,7 @@ report does not include the underlying exception type. v18 continues from v17
 and defers that initialization. All 55 local Android tests, lint and builds
 passed, including a real class-loading regression that reproduces the old
 failure with the main looper absent. That negative control does not identify
-the phone's underlying exception. Hosted and device validation are pending.
+the phone's underlying exception. Hosted validation also passed on source
+commit `e927b0770ab95ee219052f9f7994540b6c82417c`; device validation is pending.
 No raw diagnostic report is committed, and no on-phone success is claimed for
 the new revision.

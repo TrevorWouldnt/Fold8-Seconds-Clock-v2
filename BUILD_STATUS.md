@@ -43,13 +43,36 @@ available in Cloud or modified. Archive preparation reads the downloaded ZIP
 from `Downloads/archives` without extracting it into Downloads, then writes a
 new verified update into `Downloads/apps` for manual installation.
 
-Hosted v18 validation is **pending**. The workflow is configured to verify
-version 18 and produce `Fold8-Control-Lab-v18-UNTESTED` with APKs, checksums and
-`sign-v18-with-phone-key.sh`; artifact links will be recorded after that run.
-No physical-device test
-of v18 has occurred; fixing the reported initialization site is not evidence
+No physical-device test of v18 has occurred; fixing the reported initialization site is not evidence
 that seconds display works on the phone. Recovery cannot guarantee updates if
 SystemUI is killed/frozen or Vector has not loaded the module.
+
+## Hosted v18 validation
+
+Both the [push run 43982331860](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43982331860)
+and [PR run 43982372313](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43982372313)
+completed successfully for source commit
+`e927b0770ab95ee219052f9f7994540b6c82417c`. The hosted build completed in
+43 seconds and reported all **55 tests passed**, with zero failures, errors or
+skips. Lint, debug/release assembly, both source contracts, all 27 Python
+signing/preparation fixtures and the SDK35 real signer-JAR integration test
+passed.
+
+[Artifact 14283353123](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43982331860/artifacts/14283353123)
+is named `Fold8-Control-Lab-v18-UNTESTED`. Its APKs were downloaded and matched
+their recorded checksums. The debug APK was independently verified as version
+18/name 1.8, with a valid v2 signature, the expected Xposed entry and 181 class
+definitions, with no bundled Xposed API stubs. Its SHA-256 is:
+
+`7e31a6e5665952c21c112111819acab8d4c0c3c2cbe9dbdab27b8a5ac2545784`.
+
+The packaged signing helper passed shell syntax checks and pins version 18,
+this exact APK hash, the owner's original certificate and the verified SDK35
+signer JAR. The original phone-local private key remains necessary for a
+data-preserving update; it was not available or used in Cloud.
+[PR #4](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/4) contains
+the v18 source. Later documentation-only changes do not change this run's APK.
+These hosted results do not establish on-phone Vector compatibility.
 
 ## Historical v17 validation
 
