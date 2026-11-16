@@ -5,7 +5,8 @@
 - Renew clock/window observer bindings across detach/reattach and fold root changes.
 - Preserve intentional seconds settings, minute-only cadence, all v15 Control Lab
   screens and the original phone-key signing workflow.
-- Add failure/lifecycle regression coverage; v17 build and device validation are pending.
+- Add failure/lifecycle regression coverage; all 54 Android tests, lint and
+  debug/release builds passed locally and in GitHub Actions. Device validation is pending.
 
 # v1.6 · Window gestures and shade clock
 

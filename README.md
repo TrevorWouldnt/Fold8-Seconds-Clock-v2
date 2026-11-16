@@ -6,9 +6,14 @@ Appearance Studio, the device dashboard, and the root toolbox. This is the
 Control Lab continuation; it is not the smaller v0.3 app from the earlier PR.
 
 The owner reported that seconds stopped after the previous revision. v1.7 adds
-bounded recovery for clock updates and lifecycle changes. Local build, lint and
-all 54 tests passed; phone validation is pending. See [BUILD_STATUS.md](BUILD_STATUS.md) for evidence.
+bounded recovery for clock updates and lifecycle changes. Builds, lint and
+all 54 tests passed locally and in GitHub Actions; phone validation is pending.
+See [BUILD_STATUS.md](BUILD_STATUS.md) for evidence.
 Read the signing instructions below before updating an existing v15/v16 installation.
+
+[Download the v17 APK and phone-signing helper](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43973097163/artifacts/14278783547)
+from the [successful build](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43973097163).
+The source is available in [PR #3](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/3).
 
 ## Changes
 
@@ -60,24 +65,19 @@ cleared only in the signer subprocess. No package install or APK rebuild occurs.
 Download `sign-v17-with-phone-key.sh` to Downloads and keep the APK in Downloads/apps. In Termux:
 
 ```sh
-bash ~/storage/downloads/sign-v17-with-phone-key.sh ~/storage/downloads/apps/Fold8-Control-Lab-v17.apk
+FOLD8_OUTPUT_APK="$HOME/storage/downloads/Fold8-Control-Lab-v17-update.apk" bash ~/storage/downloads/sign-v17-with-phone-key.sh ~/storage/downloads/apps/Fold8-Control-Lab-v17.apk
 ```
 
 The helper uses your existing
 `~/fold8-seconds-clock/private-signing-key.jks`, verifies the downloaded APK's
 exact hash and version, signs locally, checks the certificate against the
-supplied v15 certificate, and writes
+supplied v15 certificate, and with the command above writes
+`Downloads/Fold8-Control-Lab-v17-update.apk` for manual installation through
+Samsung My Files. Without `FOLD8_OUTPUT_APK`, its default output is
 `Downloads/apps/Fold8-Control-Lab-v17-update.apk` (beside the input APK). It never generates/replaces a key,
 compiles, installs, enables a module, runs root, or restarts anything. A missing
 key or mismatch stops without saving an update. The private key stays on the phone.
 If an update output already exists, the helper leaves it untouched.
-
-To put the verified update directly in Downloads for manual installation with
-Samsung My Files:
-
-```sh
-cp ~/storage/downloads/apps/Fold8-Control-Lab-v17-update.apk ~/storage/downloads/Fold8-Control-Lab-v17-update.apk
-```
 
 If an older helper prints `Native registration unable to find class ...
 ProtoLogNative; aborting`, its Java launcher failed before signature verification.
@@ -86,8 +86,8 @@ startup failure, signer failure, input verification failure and certificate
 mismatch. The owner subsequently reported successful execution of the corrected
 v16 helper on OpenJDK 26. The v17 helper uses that same signing approach.
 
-Install the verified `-update.apk` as an update, keep only this module enabled
-for **System UI (`com.android.systemui`)** in Vector, then reboot. In Clock
+Install the verified `-update.apk` as an update, keep Fold8 Control Lab enabled
+and scope it to **System UI (`com.android.systemui`)** in Vector, then reboot. In Clock
 Studio enable **Double-tap clock to toggle bubble**, and select **Apply clock
 settings**. For the shade use **Show seconds in Quick Settings** and, if wanted,
 **Double-tap Quick Settings clock to toggle seconds**. New gestures remain

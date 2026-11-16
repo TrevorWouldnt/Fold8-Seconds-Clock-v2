@@ -22,17 +22,39 @@ fold containers, replacement/reattached windows, disabled settings, minute
 cadence, Samsung text overwrites and font scale 1.30. Android lint passed.
 Both source contracts, 16 signing-helper tests, APK module packaging, version
 17/name 1.7 and the debug APK v2 signature passed verification. Hosted validation
-will be recorded below when complete. Regression tests use simulated Android
+also passed as recorded below. Regression tests use simulated Android
 API35 and do not establish Samsung Android17 /
 OneUI9 compatibility. No physical device test of v17 has occurred. Recovery
 cannot guarantee updates in a killed/frozen SystemUI process or without Vector
 loading the module.
 
-The v17 Actions artifact is configured as `Fold8-Control-Lab-v17-UNTESTED`,
+The v17 Actions artifact is named `Fold8-Control-Lab-v17-UNTESTED`,
 including a checksum-pinned `sign-v17-with-phone-key.sh`. The owner reported
 successful v16 phone-key signing with the corrected OpenJDK26 helper; the
 private key remains exclusively on the phone. The same approach is retained
 for v17 and cloud compilation does not provide that original signature.
+
+## Hosted v17 build
+
+[GitHub Actions run 43973097163](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43973097163)
+completed successfully for source commit `d61c36b882a87fcbb166dd8d3c0c64e136f6cac2`.
+The run reports **54 tests**, with zero failures, errors or skips. Both source
+contracts, Android lint, debug/release assembly, 16 signing-helper fixtures and
+the real SDK35 signer-JAR integration test passed.
+
+[Artifact 14278783547](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/actions/runs/43973097163/artifacts/14278783547)
+was downloaded and independently checked. The debug APK has version 17/name
+1.7, a valid v2 signature, the expected Xposed entry and 180 class definitions,
+with no bundled Xposed API stubs. Its SHA-256 is:
+
+`16c498ab19c1cd690e9bb8d1171841580bf98daa1b8e6e67e2c3d94fc144770a`.
+
+The packaged phone-signing helper passed shell syntax validation and pins this
+exact APK hash, version 17 and the owner's original certificate. It still
+requires the phone-local private key to create a data-preserving update.
+[PR #3](https://github.com/TrevorWouldnt/Fold8-Seconds-Clock-v2/pull/3) contains
+the v17 source. Later documentation-only changes do not change the linked
+run's APK. No physical device or native Vector-hook validation occurred.
 
 ## Historical v16 evidence
 
