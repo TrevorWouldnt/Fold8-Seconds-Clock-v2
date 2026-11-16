@@ -13,26 +13,34 @@ final class ClockText {
     private Locale previousLocale;
     private TimeZone previousZone;
     private boolean previous24Hour;
+    private boolean previousSeconds, previousAmPm;
     private SimpleDateFormat formatter;
+    private final Date date = new Date();
 
     String format(Context context, long now) {
+        return format(context, now, ClockConfig.safeFallback(), true);
+    }
+    String format(Context context, long now, ClockConfig config, boolean seconds) {
         Locale locale = context.getResources().getConfiguration().getLocales().get(0);
         TimeZone zone = TimeZone.getDefault();
-        boolean use24Hour = DateFormat.is24HourFormat(context);
+        boolean use24Hour = config.format == 2 || (config.format == 0 && DateFormat.is24HourFormat(context));
         if (formatter == null || !locale.equals(previousLocale)
-                || !zone.equals(previousZone) || use24Hour != previous24Hour) {
+                || !zone.equals(previousZone) || use24Hour != previous24Hour
+                || seconds != previousSeconds || config.showAmPm != previousAmPm) {
             // Samsung's stock status-bar clock omits AM/PM; use the locale's time
             // separators/order while keeping that compact style in 12-hour mode.
             String pattern = DateFormat.getBestDateTimePattern(locale,
-                    use24Hour ? "Hms" : "hms");
-            if (!use24Hour) pattern = withoutDayPeriod(pattern);
+                    use24Hour ? (seconds ? "Hms" : "Hm") : (seconds ? "hms" : "hm"));
+            if (!use24Hour && !config.showAmPm) pattern = withoutDayPeriod(pattern);
             formatter = new SimpleDateFormat(pattern, locale);
             formatter.setTimeZone(zone);
             previousLocale = locale;
             previousZone = zone;
             previous24Hour = use24Hour;
+            previousSeconds = seconds; previousAmPm = config.showAmPm;
         }
-        return formatter.format(new Date(now));
+        date.setTime(now);
+        return formatter.format(date);
     }
 
     static long delayUntilNextSecond(long now) {
