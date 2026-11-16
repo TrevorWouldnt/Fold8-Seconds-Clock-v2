@@ -1,0 +1,50 @@
+# v1.8 · Xposed entry initialization
+
+- Address the v17 diagnostic finding: installed settings enabled seconds, but
+  Vector failed to load `SecondsHook` at eager static main-handler creation
+  before clock hooks ran. The filtered report did not identify the exception type.
+- Defer main-handler creation during module startup, preserving existing clock
+  recovery, full Control Lab features and phone-local update signing.
+- Add a real entry-class startup regression with the main looper absent; the
+  old eager handler fails its negative control and the fixed implementation
+  resumes clock updates after looper restoration.
+- Pass all 55 Android tests, lint, debug/release builds and 27 Python
+  signing/preparation checks locally and in both GitHub Actions runs. On-phone validation is pending.
+- Prepare signed updates directly from ZIPs in Downloads/archives, saving a new
+  verified APK in Downloads/apps for manual installation.
+
+# v1.7 · Clock update recovery
+
+- Isolate time writes from optional styling failures and bound retry work.
+- Add low-frequency recovery of interrupted tick scheduling and missed wake events.
+- Renew clock/window observer bindings across detach/reattach and fold root changes.
+- Preserve intentional seconds settings, minute-only cadence, all v15 Control Lab
+  screens and the original phone-key signing workflow.
+- Add failure/lifecycle regression coverage; all 54 Android tests, lint and
+  debug/release builds passed locally and in GitHub Actions. The owner's later
+  phone report showed no seconds and a Vector hook-load failure.
+
+# v1.6 · Window gestures and shade clock
+
+- Continue from the supplied v15 Control Lab source, preserving its full UI,
+  styles, looks, backups, diagnostics and root tools.
+- Replace child-view touch listeners with window-level double-tap observation;
+  retain status-bar bubble toggles and add opt-in shade seconds gestures.
+- Add independent shade seconds, gesture haptics and AM/PM, with backward-compatible backups.
+- Share the ticker, stop on screen-off/hidden clocks, cache settings and move
+  provider I/O off the UI thread; restore original styling on detach.
+- Add Android behavior tests, lint/build checks, source provenance, Actions
+  artifacts and a signing-only helper for the owner's original phone key.
+
+# v1.5 · Control Center Edition
+
+- Added Control Center navigation in Clock Studio.
+- Added dedicated Clock, Themes, Device, and Root sections.
+- Added strict JSON backups, import validation, sharing, diffing, rollback, and six additional named looks C–H.
+- Added theme personalization controls: custom accents, accessibility contrast, AMOLED black, layout density, pinned preview, haptic feedback, typography, transparency, glow and radius.
+- Added a 39-value read-only device diagnostics dashboard, including battery-side power measurements, temperatures, storage, display, and network status.
+- Added private diagnostic history, comparison, clipboard copy and Android sharing.
+- Added root/Vector diagnostics and safe recovery shortcuts with no automatic root execution.
+- Preserved original v1.3 System UI hooks, settings provider, Xposed entry and v1.4 core previews without modifications.
+
+See `FEATURES.md` for the auditable detailed catalog and limitations.
